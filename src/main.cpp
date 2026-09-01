@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "filme.hpp"
+#include "cinemas.hpp"
 
 std::vector<Filme> ler_filmes(std::string caminho);
 
@@ -87,6 +88,21 @@ std::vector<Filme> ler_filmes(std::string caminho) {
 			ano_inicial, ano_final, adulto, duracao, generos);
 		filmes.push_back(filme);
 	}
+
+
+
+
+
+// A FAZER
+	vector<Cinemas> ler_cinemas (string caminho){
+    ifstream arq(caminho);
+    if (!arq.is_open()){
+        cerr << "nao foi possivel abrir o arquivo: '" << caminho << "'!"
+			 << endl;
+		exit(EXIT_FAILURE);
+    }
+}
+	
 
 	return filmes;
 }
