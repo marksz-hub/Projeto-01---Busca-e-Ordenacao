@@ -3,21 +3,19 @@
 #include <string>
 #include <vector>
 
-using namespace std;
 
-
-struct Cinemas{
+struct Cinema{
 private:
-    string id;
-    string nome_do_cinema;
+    std::string id;
+    std::string nome_do_cinema;
     int x;
     int y;
     double preco_ingresso;
-    vector <string> filmes_em_exibicao;
+    std::vector<std::string> filmes_em_exibicao;
 
 public:
-    Cinemas (string id, string nome_do_cinema, int x, int y,
-        double preco_ingresso, vector <string> filmes_em_exibicao){
+    Cinema (std::string id, std::string nome_do_cinema, int x, int y,
+        double preco_ingresso, std::vector<std::string> filmes_em_exibicao){
         this->id = id;
         this->nome_do_cinema = nome_do_cinema;
         this->x = x;
