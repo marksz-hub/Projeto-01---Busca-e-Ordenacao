@@ -15,14 +15,17 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <sstream>
 
 #include "filme.hpp"
-#include "cinemas.hpp"
+#include "cinema.hpp"
 
 std::vector<Filme> ler_filmes(std::string caminho);
+std::vector<Cinema> ler_cinemas(std::string caminho);
 
 int main() {
 	std::vector<Filme> filmes = ler_filmes("../data/filmes.csv");
+	std::vector<Cinema> cinemas = ler_cinemas("../data/cinemas.csv");
 
 	return EXIT_SUCCESS;
 }
@@ -89,20 +92,89 @@ std::vector<Filme> ler_filmes(std::string caminho) {
 		filmes.push_back(filme);
 	}
 
+	return filmes;
+}
 
 
 
 
-// A FAZER
-	vector<Cinemas> ler_cinemas (string caminho){
-    ifstream arq(caminho);
-    if (!arq.is_open()){
-        cerr << "nao foi possivel abrir o arquivo: '" << caminho << "'!"
-			 << endl;
-		exit(EXIT_FAILURE);
+
+
+/* LEITURA DO ARQUIVO DE CINEMAS */
+
+
+void removerEspacoInicial(std::string &texto);
+
+
+std::vector<Cinema> ler_cinemas(std::string caminho){
+	/* Abre o arquivo de cinemas para leitura */
+    std::ifstream arq(caminho);
+    if ( !arq.is_open() ){
+        std::cerr << "nao foi possivel abrir o arquivo: '" << caminho << "'!"
+			 	  << std::endl;
+		std::exit(EXIT_FAILURE);
     }
+
+
+	std::vector<Cinema> cinemas;
+	std::string linha;
+
+	/* Pula a primeira linha */
+	std::getline(arq, linha); 
+
+	while (std::getline(arq, linha)){
+
+		/* Variáveis que armazenam os dados de um cinema */
+		std::string id;
+		std::string nome_do_cinema;
+		int x;
+		int y;
+		double preco_ingresso;
+		std::vector<std::string> filmes_em_exibicao;
+
+		/* Usa a linha como um fluxo para separar os campos por vírgula */
+		std::string buf;
+		std::stringstream ss(linha);
+
+
+		std::getline(ss, id, ',');
+
+		std::getline(ss, nome_do_cinema, ',');
+		removerEspacoInicial(nome_do_cinema);
+
+		/* Lê as coordenadas e converte seus valores de string para inteiro */
+		std::getline(ss, buf, ',');
+		x = std::stoi(buf);
+		std::getline(ss, buf, ',');
+		y = std::stoi(buf);
+
+		/* Lê o preço e converte seu valor de string para double */
+		std::getline(ss, buf, ',');
+		preco_ingresso = std::stod(buf);
+
+		/* Os campos restantes da linha correspondem aos filmes em exibição,
+		com a quantidade de filmes (campos) podendo variar entre os cinemas */
+		while (std::getline(ss, buf, ',')) {
+			removerEspacoInicial(buf);
+			filmes_em_exibicao.push_back(buf);
+		}
+
+		/* Cria o objeto cinema com os dados lidos da linha */
+		Cinema cinema = Cinema(id, nome_do_cinema, x, y, 
+			preco_ingresso, filmes_em_exibicao);
+		/* Adiciona o cinema ao vetor */
+		cinemas.push_back(cinema);
+	}
+
+	return cinemas;
 }
 	
 
-	return filmes;
+
+/* Remove o espaco que aparece no início dos campos
+   após a separação por vírgula  */
+void removerEspacoInicial(std::string &texto){
+	if (!texto.empty()  &&  texto[0] == ' '){
+		texto.erase(0, 1);
+	}
 }
