@@ -23,4 +23,4 @@ public:
         this->preco_ingresso = preco_ingresso;
         this->filmes_em_exibicao = filmes_em_exibicao;
     }
-}
+};
