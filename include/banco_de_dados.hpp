@@ -1,5 +1,3 @@
-#pragma once
-
 /* Trabalho I
  * Técnicas de Busca e Ordenação
  *
@@ -9,14 +7,16 @@
  *   2026-09-15
  */
 
+#pragma once
+
 #include <fstream>
 #include <iostream>
 #include <numeric>
 #include <sstream>
 #include <vector>
 
-#include "filme.hpp"
 #include "cinema.hpp"
+#include "filme.hpp"
 
 struct BancoDeDados {
 private:

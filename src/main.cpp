@@ -15,7 +15,6 @@ BancoDeDados bd {};
 
 int main() {
 	bd.lerDados();
-	std::vector<int> v(584122);
 
 	return EXIT_SUCCESS;
 }

@@ -1,3 +1,12 @@
+/* Trabalho I
+ * Técnicas de Busca e Ordenação
+ *
+ * Filmes
+ *
+ * INÍCIO:
+ *   2026-09-01
+ */
+
 #pragma once
 
 #include <string>
