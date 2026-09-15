@@ -3,7 +3,7 @@
 #include <string>
 
 struct Filme {
-private:
+public:
 	std::string id;
 	std::string tipo;
 	std::string titulo_primario;
@@ -14,7 +14,6 @@ private:
 	int duracao;
 	std::string generos;
 
-public:
 	Filme(std::string id, std::string tipo, std::string titulo_primario,
 		std::string titulo_original, int ano_inicial, int ano_final,
 		bool adulto, int duracao, std::string generos) {
