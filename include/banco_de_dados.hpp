@@ -12,22 +12,35 @@
 #include <fstream>
 #include <iostream>
 #include <numeric>
-#include <sstream>
+#include <string>
 #include <vector>
 
 #include "cinema.hpp"
 #include "filme.hpp"
+#include "leitor.hpp"
 
 struct BancoDeDados {
 private:
 	/* Tipo para as funções de ordenação da função quicksort */
 	typedef bool(ord_t)(Filme &a, Filme &b);
 
+	/* Tipo para as funções de ordenação da função countingsort */
+	typedef unsigned(key_t)(Filme &f);
+
 	const std::string CAMINHO_FILMES = "../data/filmes.csv";
 	const std::string CAMINHO_CINEMAS = "../data/cinemas.csv";
 
 	std::vector<Filme> filmes;
-	std::vector<unsigned> ind_titulos;
+
+	unsigned ano_inicial_max;
+	unsigned ano_final_max;
+	unsigned duracao_max;
+
+	std::vector<unsigned> ind_titulo_primario;
+	std::vector<unsigned> ind_titulo_original;
+	std::vector<unsigned> ind_ano_inicial;
+	std::vector<unsigned> ind_ano_final;
+	std::vector<unsigned> ind_duracao;
 
 	std::vector<Cinema> cinemas;
 
@@ -39,59 +52,12 @@ private:
 			std::exit(EXIT_FAILURE);
 		}
 
-		std::vector<Filme> filmes;
+		LeitorFilme leitor { caminho };
+		std::vector<Filme> filmes = leitor.ler();
 
-		std::string id;
-		std::string tipo;
-		std::string titulo_primario;
-		std::string titulo_original;
-		std::string generos;
-
-		std::string buf;
-		int ano_inicial;
-		int ano_final;
-		bool adulto;
-		int duracao;
-
-		/* Pula a primeira linha */
-		std::getline(arq, buf);
-
-		while( !arq.eof() ) {
-			std::getline(arq, id, '\t');
-			std::getline(arq, tipo, '\t');
-			std::getline(arq, titulo_primario, '\t');
-			std::getline(arq, titulo_original, '\t');
-
-			std::getline(arq, buf, '\t');
-			adulto = (std::stoi(buf) == 1);
-
-			std::getline(arq, buf, '\t');
-			if( buf == "\\N" ) {
-				ano_inicial = -1;
-			} else {
-				ano_inicial = std::stoi(buf);
-			}
-
-			std::getline(arq, buf, '\t');
-			if( buf == "\\N" ) {
-				ano_final = -1;
-			} else {
-				ano_final = std::stoi(buf);
-			}
-
-			std::getline(arq, buf, '\t');
-			if( buf == "\\N" ) {
-				duracao = -1;
-			} else {
-				duracao = std::stoi(buf);
-			}
-
-			std::getline(arq, generos);
-
-			Filme filme = Filme(id, tipo, titulo_primario, titulo_original,
-				ano_inicial, ano_final, adulto, duracao, generos);
-			filmes.push_back(filme);
-		}
+		this->ano_inicial_max = leitor.ano_inicial_max;
+		this->ano_final_max = leitor.ano_final_max;
+		this->duracao_max = leitor.duracao_max;
 
 		return filmes;
 	}
@@ -105,72 +71,26 @@ private:
 			std::exit(EXIT_FAILURE);
 		}
 
-		std::vector<Cinema> cinemas;
-		std::string linha;
-
-		/* Pula a primeira linha */
-		std::getline(arq, linha);
-
-		while( std::getline(arq, linha) ) {
-
-			/* Variáveis que armazenam os dados de um cinema */
-			std::string id;
-			std::string nome_do_cinema;
-			int x;
-			int y;
-			double preco_ingresso;
-			std::vector<std::string> filmes_em_exibicao;
-
-			/* Usa a linha como um fluxo para separar os campos por vírgula */
-			std::string buf;
-			std::stringstream ss(linha);
-
-			std::getline(ss, id, ',');
-
-			std::getline(ss, nome_do_cinema, ',');
-			removerEspacoInicial(nome_do_cinema);
-
-			/* Lê as coordenadas e converte seus valores de string para inteiro
-			 */
-			std::getline(ss, buf, ',');
-			x = std::stoi(buf);
-			std::getline(ss, buf, ',');
-			y = std::stoi(buf);
-
-			/* Lê o preço e converte seu valor de string para double */
-			std::getline(ss, buf, ',');
-			preco_ingresso = std::stod(buf);
-
-			/* Os campos restantes da linha correspondem aos filmes em exibição,
-			 * com a quantidade de filmes (campos) podendo variar entre os
-			 * cinemas
-			 */
-			while( std::getline(ss, buf, ',') ) {
-				removerEspacoInicial(buf);
-				filmes_em_exibicao.push_back(buf);
-			}
-
-			/* Cria o objeto cinema com os dados lidos da linha */
-			Cinema cinema = Cinema(
-				id, nome_do_cinema, x, y, preco_ingresso, filmes_em_exibicao);
-			/* Adiciona o cinema ao vetor */
-			cinemas.push_back(cinema);
-		}
+		LeitorCinema leitor { caminho };
+		std::vector<Cinema> cinemas = leitor.ler();
 
 		return cinemas;
 	}
 
-	/* Remove o espaco que aparece no início dos campos após a separação por
-	 * vírgula
-	 */
-	void removerEspacoInicial(std::string &texto) {
-		if( !texto.empty() && texto[0] == ' ' ) {
-			texto.erase(0, 1);
-		}
+	void construirIndicesFilmes(void) {
+		this->ind_titulo_primario
+			= this->criarIndiceTitulo(compararPorTituloPrimario);
+		this->ind_titulo_original
+			= this->criarIndiceTitulo(compararPorTituloOriginal);
+		this->ind_ano_inicial
+			= this->criarIndiceNumero(ano_inicial_max, obterAnoInicial);
+		this->ind_ano_final
+			= this->criarIndiceNumero(ano_final_max, obterAnoFinal);
+		this->ind_duracao = this->criarIndiceNumero(duracao_max, obterDuracao);
 	}
 
 	/* Cria um índice baseado em uma propriedade duma classe */
-	std::vector<unsigned> criarIndice(ord_t f) {
+	std::vector<unsigned> criarIndiceTitulo(ord_t f) {
 		std::vector<unsigned> indices(this->filmes.size(), 0);
 		std::iota(std::begin(indices), std::end(indices), 0);
 
@@ -179,7 +99,22 @@ private:
 		return indices;
 	}
 
-	/* Ordena um vetor de inteiros utiliando o algoritmo Quicksort */
+	/* Cria um índice baseado em uma propriedade duma classe */
+	std::vector<unsigned> criarIndiceNumero(unsigned k, key_t f) {
+		std::vector<unsigned> indices(this->filmes.size(), 0);
+		std::iota(std::begin(indices), std::end(indices), 0);
+
+		countingsort(indices, k, f);
+
+		return indices;
+	}
+
+	/* Ordena um vetor de inteiros utilizando o algoritmo Quicksort
+	 *
+	 * Este algoritmo é usado para ordenar os títulos, já que são, em sua
+	 * maioria, distintos, e essencialmente aleatórios (bom caso-de-uso para
+	 * o Quicksort)
+	 */
 	void quicksort(std::vector<unsigned> &v, int baixo, int alto, ord_t f) {
 		if( baixo >= alto || baixo < 0 ) {
 			return;
@@ -191,8 +126,8 @@ private:
 		quicksort(v, p + 1, alto, f);
 	}
 
+	/* Particiona o array (para o Quicksort) */
 	int partition(std::vector<unsigned> &v, int baixo, int alto, ord_t f) {
-
 		unsigned pivo;
 		int i, j;
 
@@ -211,19 +146,60 @@ private:
 		return i;
 	}
 
+	/* Ordena um vetor de inteiros utilizando o algoritmo Counting Sort
+	 *
+	 * Este algoritmo é usado para ordenar os anos de lançamento e durações, já
+	 * que são números inteiros positivos e que se repetem com frequência
+	 * (excelente caso-de-uso para o Counting Sort...)
+	 */
+	void countingsort(std::vector<unsigned> &v, unsigned k, key_t f) {
+		std::vector<unsigned> contagem(k + 1, 0);
+		std::vector<unsigned> ordenado(v.size());
+		unsigned i, j;
+
+		for( i = 0; i < v.size(); ++i ) {
+			j = f(this->filmes[v[i]]);
+			contagem[j] = contagem[j] + 1;
+		}
+
+		for( i = 1; i <= k; ++i ) {
+			contagem[i] = contagem[i] + contagem[i - 1];
+		}
+
+		for( i = v.size(); i > 0; --i ) {
+			j = f(this->filmes[v[i - 1]]);
+			contagem[j] = contagem[j] - 1;
+			ordenado[contagem[j]] = v[i - 1];
+		}
+
+		v = ordenado;
+	}
+
 	static bool compararPorTituloPrimario(Filme &a, Filme &b) {
 		return a.titulo_primario <= b.titulo_primario;
 	}
 
-	static bool compararPorAnoInicial(Filme &a, Filme &b) {
-		return a.ano_inicial <= b.ano_inicial;
+	static bool compararPorTituloOriginal(Filme &a, Filme &b) {
+		return a.titulo_original <= b.titulo_original;
+	}
+
+	static unsigned obterAnoInicial(Filme &f) {
+		return f.ano_inicial;
+	}
+
+	static unsigned obterAnoFinal(Filme &f) {
+		return f.ano_final;
+	}
+
+	static unsigned obterDuracao(Filme &f) {
+		return f.duracao;
 	}
 
 public:
 	/* Lê os dados dos filmes e cinemas */
 	void lerDados(void) {
 		this->filmes = this->lerFilmes(this->CAMINHO_FILMES);
-		this->ind_titulos = this->criarIndice(compararPorTituloPrimario);
+		this->construirIndicesFilmes();
 
 		this->cinemas = this->lerCinemas(this->CAMINHO_CINEMAS);
 	}
