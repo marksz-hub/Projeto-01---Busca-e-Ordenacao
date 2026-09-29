@@ -10,27 +10,49 @@
 #pragma once
 
 #include <algorithm>
+#include <iostream>
 #include <vector>
 #include <cstdint>
 
 struct Conjunto {
 private:
+	const unsigned n;
 	std::vector<uint64_t> v;
 
 public:
 	Conjunto(unsigned n)
-		: v((n + 64 - 1) / 64) { }
+		: n { n }
+		, v((n + 64 - 1) / 64, 0) { }
+
+	unsigned qtd(void) const {
+		return n;
+	}
 
 	unsigned tamanho(void) const {
 		return this->v.size();
 	}
 
-	unsigned getChunk(unsigned i) const {
+	unsigned getChunk(const unsigned i) const {
 		return this->v[i];
 	}
 
-	void setChunk(unsigned i, uint64_t valor) {
-		this->v[i] = valor;
+	void setChunk(const unsigned i, const uint64_t v) {
+		this->v[i] = v;
+	}
+
+	uint64_t getBit(const uint64_t i) const {
+		const uint64_t shift = i % 64;
+		return this->v[i >> 6] & (1UL << shift);
+	}
+
+	void setBit(uint64_t i) {
+		const uint64_t shift = i % 64;
+		this->v[i >> 6] |= (1UL << shift);
+	}
+
+	void clearBit(uint64_t i) {
+		const uint64_t shift = i % 64;
+		this->v[i >> 6] &= ~(1UL << shift);
 	}
 
 	/* Obtém a união entre dois conjuntos

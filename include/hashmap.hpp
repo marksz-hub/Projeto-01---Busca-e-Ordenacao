@@ -7,12 +7,16 @@
  *   2026-09-26
  */
 
+#pragma once
+
 #include <cstdint>
 #include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "util.hpp"
 
 /* Hashmap
  *
@@ -30,25 +34,7 @@ private:
 
 	const uint64_t TAMANHO = 64;
 
-	const uint64_t FNV1A_OFFSET_BASIS = 14695981039346656037U;
-	const uint64_t FNV1A_PRIME = 1099511628211U;
-
 	std::vector<std::unique_ptr<HashmapNo>> v;
-
-	/* Algoritmo FNV-1a
-	 *
-	 * Relativamente rápido (veloz o suficiente para nosso caso) e muito
-	 * simples de se implementar
-	 */
-	uint64_t computarHash(const std::string &str) {
-		uint64_t h = FNV1A_OFFSET_BASIS;
-		for( char c : str ) {
-			h ^= c;
-			h *= FNV1A_PRIME;
-		}
-
-		return h & TAMANHO;
-	}
 
 public:
 	/* Inicializa um hashmap vazio */
@@ -77,7 +63,7 @@ public:
 		std::unique_ptr<HashmapNo> no
 			= std::unique_ptr<HashmapNo>(new HashmapNo { k, v, nullptr });
 
-		i = this->computarHash(k);
+		i = computarHash(k) & this->TAMANHO;
 		if( !this->v[i] ) {
 			no->prox = std::move(this->v[i]);
 		}
@@ -92,7 +78,7 @@ public:
 	bool remover(const std::string k) {
 		uint64_t i;
 
-		i = this->computarHash(k);
+		i = computarHash(k) & this->TAMANHO;
 		std::unique_ptr<HashmapNo> *prox;
 		std::unique_ptr<HashmapNo> no = std::move(this->v[i]);
 
@@ -115,7 +101,7 @@ public:
 	bool buscar(const std::string k, V *v) {
 		uint64_t i;
 
-		i = this->computarHash(k);
+		i = computarHash(k) & this->TAMANHO;
 		std::unique_ptr<HashmapNo> no = std::move(this->v[i]);
 
 		while( no ) {

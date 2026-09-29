@@ -17,6 +17,7 @@ struct Filme {
 	std::string tipo;
 	std::string titulo_primario;
 	std::string titulo_original;
+	std::string pesquisavel;
 	bool adulto;
 	unsigned ano_inicial;
 	unsigned ano_final;

@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <cstdint>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <numeric>
@@ -16,8 +18,10 @@
 #include <vector>
 
 #include "cinema.hpp"
+#include "consulta.hpp"
 #include "filme.hpp"
 #include "leitor.hpp"
+#include "set.hpp"
 
 struct BancoDeDados {
 private:
@@ -176,11 +180,11 @@ private:
 	}
 
 	static bool compararPorTituloPrimario(Filme &a, Filme &b) {
-		return a.titulo_primario <= b.titulo_primario;
+		return a.titulo_primario < b.titulo_primario;
 	}
 
 	static bool compararPorTituloOriginal(Filme &a, Filme &b) {
-		return a.titulo_original <= b.titulo_original;
+		return a.titulo_original < b.titulo_original;
 	}
 
 	static unsigned obterAnoInicial(Filme &f) {
@@ -195,12 +199,97 @@ private:
 		return f.duracao;
 	}
 
+	Conjunto consultarFilme(const ConsultaNo *consulta) const {
+		switch( consulta->tipo ) {
+		case TipoConsulta::TITULO:
+			return this->consultarFilmePorTitulo(consulta->dado.titulo);
+		case TipoConsulta::ADULTO:
+			break;
+		case TipoConsulta::ANO:
+			break;
+		case TipoConsulta::ANO_FAIXA_INICIAL:
+			break;
+		case TipoConsulta::ANO_FAIXA_FINAL:
+			break;
+		case TipoConsulta::DURACAO:
+			break;
+		case TipoConsulta::GENERO:
+			break;
+		case TipoConsulta::OP_E:
+			break;
+		case TipoConsulta::OP_OU:
+			break;
+		case TipoConsulta::OP_NAO:
+			break;
+		}
+
+		std::cerr << "ahn?" << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
+
+	Conjunto consultarFilmePorTitulo(const std::string &titulo) const {
+		Conjunto c(this->filmes.size());
+		unsigned l = 0, r = this->filmes.size() - 1;
+
+		while( l < r ) {
+			const unsigned m = (l + r) / 2;
+			const std::string &valor
+				= this->filmes[this->ind_titulo_original[m]].titulo_original;
+
+			if( valor < titulo ) {
+				l = m + 1;
+			} else {
+				r = m;
+			}
+		}
+
+		if( l >= this->filmes.size()
+			|| this->filmes[this->ind_titulo_original[l]].titulo_original
+				!= titulo ) {
+			/* TODO: identificar sem sucesso */
+			return c;
+		}
+
+		unsigned ok = l;
+		do {
+			c.setBit(this->ind_titulo_original[ok++]);
+		} while( ok < this->filmes.size()
+			&& this->filmes[this->ind_titulo_original[ok]].titulo_original
+				<= titulo );
+
+		return c;
+	}
+
 public:
 	/* Lê os dados dos filmes e cinemas */
 	void lerDados(void) {
 		this->filmes = this->lerFilmes(this->CAMINHO_FILMES);
+		std::cout << "#1 ... Leu filmes " << std::endl;
 		this->construirIndicesFilmes();
-
+		std::cout << "#2 ... Construiu indices" << std::endl;
 		this->cinemas = this->lerCinemas(this->CAMINHO_CINEMAS);
+		std::cout << "#3 ... Leu cinemas" << std::endl;
+	}
+
+	/* Faz uma consulta por filmes */
+	std::vector<Filme> consultarFilme(
+		const Consulta &consulta, unsigned limite = 50) const {
+		/* TODO:
+		 * - cache
+		 * - paginação
+		 */
+		uint64_t i, j = 0;
+		const Conjunto conj = this->consultarFilme(consulta.raiz);
+		std::vector<Filme> filmes { limite };
+
+		for( i = 0; i < conj.qtd() && limite; ++i ) {
+			if( conj.getBit(i) ) {
+				filmes[j++] = this->filmes[i];
+				--limite;
+			}
+		}
+
+		filmes.resize(j);
+		return filmes;
 	}
 };

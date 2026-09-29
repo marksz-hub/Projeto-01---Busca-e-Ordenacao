@@ -7,6 +7,8 @@
  *   2026-09-01
  */
 
+#pragma once
+
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -15,7 +17,6 @@
 
 #include "cinema.hpp"
 #include "filme.hpp"
-#include "hashmap.hpp"
 
 class Leitor {
 protected:
