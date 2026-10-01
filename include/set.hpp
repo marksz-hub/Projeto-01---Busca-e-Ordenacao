@@ -10,7 +10,6 @@
 #pragma once
 
 #include <algorithm>
-#include <iostream>
 #include <vector>
 #include <cstdint>
 
@@ -32,11 +31,11 @@ public:
 		return this->v.size();
 	}
 
-	unsigned getChunk(const unsigned i) const {
+	uint64_t getChunk(const uint64_t i) const {
 		return this->v[i];
 	}
 
-	void setChunk(const unsigned i, const uint64_t v) {
+	void setChunk(const uint64_t i, const uint64_t v) {
 		this->v[i] = v;
 	}
 
@@ -55,57 +54,56 @@ public:
 		this->v[i >> 6] &= ~(1UL << shift);
 	}
 
-	/* Obtém a união entre dois conjuntos
+	/* Obtém a intersecção de dois conjuntos
 	 * C = A & B
 	 */
-	Conjunto uniao(const Conjunto &lhs, const Conjunto &rhs) const {
-		const unsigned tamanho = std::min(lhs.tamanho(), rhs.tamanho());
-		Conjunto novo { tamanho };
+	Conjunto interseccao(const Conjunto &lhs, const Conjunto &rhs) const {
+		const unsigned n = std::min(lhs.qtd(), rhs.qtd());
+		Conjunto novo { n };
 
-		for( unsigned i = 0; i < tamanho; ++i ) {
+		for( unsigned i = 0; i < novo.tamanho(); ++i ) {
 			novo.setChunk(i, lhs.getChunk(i) & rhs.getChunk(i));
 		}
 
 		return novo;
 	}
 
-	/* Obtém a intersecção entre dois conjuntos
+	/* Obtém a união entre dois conjuntos
 	 * C = A | B
 	 */
-	Conjunto interseccao(const Conjunto &lhs, const Conjunto &rhs) const {
-		const unsigned tamanho = std::min(lhs.tamanho(), rhs.tamanho());
-		Conjunto novo { tamanho };
+	Conjunto uniao(const Conjunto &lhs, const Conjunto &rhs) const {
+		const unsigned n = std::min(lhs.qtd(), rhs.qtd());
+		Conjunto novo { n };
 
-		for( unsigned i = 0; i < tamanho; ++i ) {
+		for( unsigned i = 0; i < novo.tamanho(); ++i ) {
 			novo.setChunk(i, lhs.getChunk(i) | rhs.getChunk(i));
 		}
 
 		return novo;
 	}
 
-	/* Obtém a diferença entre dois conjuntos
+	/* Obtém a negação de um conjunto
 	 * C = A - B
 	 */
-	Conjunto diferenca(const Conjunto &lhs, const Conjunto &rhs) const {
-		const unsigned tamanho = std::min(lhs.tamanho(), rhs.tamanho());
-		Conjunto novo { tamanho };
+	Conjunto negacao(const Conjunto &c) const {
+		Conjunto novo { c.tamanho() };
 
-		for( unsigned i = 0; i < tamanho; ++i ) {
-			novo.setChunk(i, lhs.getChunk(i) - rhs.getChunk(i));
+		for( unsigned i = 0; i < c.tamanho(); ++i ) {
+			novo.setChunk(i, ~c.getChunk(i));
 		}
 
 		return novo;
 	}
 
 	Conjunto operator&(const Conjunto &rhs) const {
-		return this->uniao(*this, rhs);
-	}
-
-	Conjunto operator|(const Conjunto &rhs) const {
 		return this->interseccao(*this, rhs);
 	}
 
-	Conjunto operator-(const Conjunto &rhs) const {
-		return this->diferenca(*this, rhs);
+	Conjunto operator|(const Conjunto &rhs) const {
+		return this->uniao(*this, rhs);
+	}
+
+	Conjunto operator~(void) const {
+		return this->negacao(*this);
 	}
 };

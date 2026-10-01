@@ -202,7 +202,7 @@ private:
 	Conjunto consultarFilme(const ConsultaNo *consulta) const {
 		switch( consulta->tipo ) {
 		case TipoConsulta::TITULO:
-			return this->consultarFilmePorTitulo(consulta->dado.titulo);
+			return this->consultarFilmePorTitulo(consulta->getStr());
 		case TipoConsulta::ADULTO:
 			break;
 		case TipoConsulta::ANO:
@@ -215,15 +215,23 @@ private:
 			break;
 		case TipoConsulta::GENERO:
 			break;
-		case TipoConsulta::OP_E:
-			break;
-		case TipoConsulta::OP_OU:
-			break;
-		case TipoConsulta::OP_NAO:
-			break;
+		case TipoConsulta::OP_E: {
+			Conjunto a = this->consultarFilme(consulta->getEsq());
+			Conjunto b = this->consultarFilme(consulta->getDir());
+			return a & b;
+		}
+		case TipoConsulta::OP_OU: {
+			Conjunto a = this->consultarFilme(consulta->getEsq());
+			Conjunto b = this->consultarFilme(consulta->getDir());
+			return a | b;
+		}
+		case TipoConsulta::OP_NAO: {
+			Conjunto c = this->consultarFilme(consulta->getEsq());
+			return ~c;
+		}
 		}
 
-		std::cerr << "ahn?" << std::endl;
+		std::cerr << "consulta invalidississima" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 
@@ -231,6 +239,7 @@ private:
 		Conjunto c(this->filmes.size());
 		unsigned l = 0, r = this->filmes.size() - 1;
 
+		/* Busca binária pelo título */
 		while( l < r ) {
 			const unsigned m = (l + r) / 2;
 			const std::string &valor
@@ -243,13 +252,42 @@ private:
 			}
 		}
 
+		/* Se cairmos nesse caso, não encontramos nenhum filme...
+		 * Sai da função
+		 */
 		if( l >= this->filmes.size()
 			|| this->filmes[this->ind_titulo_original[l]].titulo_original
 				!= titulo ) {
-			/* TODO: identificar sem sucesso */
+			/* TODO: alguma forma de dizer 'ei, não achamos nada.'
+			 * Ou talvez só retornar o set vazio já seja suficiente...
+			 */
 			return c;
 		}
 
+		/* Se cairmos nesse caso, encontramos!
+		 *
+		 * Como podem existir vários filmes com o mesmo título. Aquela busca
+		 * binária foi feita para encontrar o filme que aparece primeiro no
+		 * índice. Por isso que temos esse loop aqui, pra ir adicionando todos
+		 * os filmes com título igual, avançando filme por filme:
+		 *
+		 * Exemplo:
+		 *
+		 * BUSCA: "AFTERMATH"
+		 *
+		 * [ ... , "A", "AFTERMATH", "AFTERMATH", "AFTERMATH", "B", ... ]
+		 *                   │                         │
+		 *                   busca binária             │
+		 *                   encontra essa             │
+		 *                   posição                   │
+		 *                                             │
+		 *                                             ...mas temos que
+		 *                                             percorrer até aqui
+		 *                                             para pegar todos os
+		 *                                             filmes cujo nome bate
+		 *                                             com a busca
+		 *
+		 * */
 		unsigned ok = l;
 		do {
 			c.setBit(this->ind_titulo_original[ok++]);
@@ -263,12 +301,61 @@ private:
 public:
 	/* Lê os dados dos filmes e cinemas */
 	void lerDados(void) {
+		std::cout << "# Lendo filmes ... " << std::flush;
 		this->filmes = this->lerFilmes(this->CAMINHO_FILMES);
-		std::cout << "#1 ... Leu filmes " << std::endl;
-		this->construirIndicesFilmes();
-		std::cout << "#2 ... Construiu indices" << std::endl;
+		std::cout << "OK!" << std::endl;
+
+		std::cout << "# Lendo cinemas ... " << std::flush;
 		this->cinemas = this->lerCinemas(this->CAMINHO_CINEMAS);
-		std::cout << "#3 ... Leu cinemas" << std::endl;
+		std::cout << "OK!" << std::endl;
+
+		std::cout << "# Construindo indices ... " << std::flush;
+		this->construirIndicesFilmes();
+		std::cout << "OK!" << std::endl;
+	}
+
+	void printConsulta(ConsultaNo *no) const {
+		switch( no->tipo ) {
+		case TipoConsulta::TITULO:
+			std::cout << "(TITULO: " << no->getStr() << ")" << std::endl;
+			break;
+		case TipoConsulta::ADULTO:
+			std::cout << "(ADULTO: " << no->isAdulto() << ")" << std::endl;
+			break;
+		case TipoConsulta::ANO:
+			std::cout << "(ANO:    " << no->getNum() << ")" << std::endl;
+			break;
+		case TipoConsulta::ANO_FAIXA_INICIAL:
+			break;
+		case TipoConsulta::ANO_FAIXA_FINAL:
+			break;
+		case TipoConsulta::DURACAO:
+			break;
+		case TipoConsulta::GENERO:
+			break;
+		case TipoConsulta::OP_E:
+			std::cout << "(E:" << std::endl;
+
+			std::cout << "  ";
+			this->printConsulta(no->getEsq());
+			std::cout << "  ";
+			this->printConsulta(no->getDir());
+
+			std::cout << ")" << std::endl;
+			break;
+		case TipoConsulta::OP_OU:
+			std::cout << "(OU:" << std::endl;
+
+			std::cout << "  ";
+			this->printConsulta(no->getEsq());
+			std::cout << "  ";
+			this->printConsulta(no->getDir());
+
+			std::cout << ")" << std::endl;
+			break;
+		case TipoConsulta::OP_NAO:
+			break;
+		}
 	}
 
 	/* Faz uma consulta por filmes */
@@ -279,6 +366,8 @@ public:
 		 * - paginação
 		 */
 		uint64_t i, j = 0;
+
+		this->printConsulta(consulta.raiz);
 		const Conjunto conj = this->consultarFilme(consulta.raiz);
 		std::vector<Filme> filmes { limite };
 

@@ -23,4 +23,8 @@ struct Filme {
 	unsigned ano_final;
 	unsigned duracao;
 	std::vector<std::string> generos;
+
+	friend std::ostream &operator<<(std::ostream &strm, const Filme &f) {
+		return strm << f.titulo_original;
+	}
 };
