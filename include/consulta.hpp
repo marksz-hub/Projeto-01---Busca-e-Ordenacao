@@ -21,6 +21,7 @@ enum struct TipoConsulta {
 	ANO_FAIXA_FINAL,
 	DURACAO,
 	GENERO,
+	TIPO,
 	OP_E,
 	OP_OU,
 	OP_NAO,
@@ -88,6 +89,7 @@ public:
 		switch( tipo ) {
 		case TipoConsulta::TITULO:
 		case TipoConsulta::GENERO:
+		case TipoConsulta::TIPO: 
 			delete[] this->dado.str;
 			break;
 		case TipoConsulta::OP_E:
@@ -104,7 +106,8 @@ public:
 
 	std::string getStr(void) const {
 		assert(this->tipo == TipoConsulta::TITULO
-			|| this->tipo == TipoConsulta::GENERO);
+			|| this->tipo == TipoConsulta::GENERO
+			|| this->tipo == TipoConsulta::TIPO);
 		return this->dado.str;
 	}
 
@@ -236,6 +239,11 @@ public:
 
 	void adicionarBuscaPorGenero(const std::string genero) {
 		ConsultaNo *no = new ConsultaNo(TipoConsulta::GENERO, genero);
+		this->adicionarNo(no);
+	}
+
+	void adicionarBuscaPorTipo(const std::string tipo) {
+		ConsultaNo *no = new ConsultaNo(TipoConsulta::TIPO, tipo);
 		this->adicionarNo(no);
 	}
 
