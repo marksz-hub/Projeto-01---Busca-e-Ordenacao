@@ -46,6 +46,9 @@ private:
 	std::vector<unsigned> ind_ano_final;
 	std::vector<unsigned> ind_duracao;
 
+	std::vector<string> tipos;
+	std::vector<std::vector<unsigned>> ind_tipo;
+
 	std::vector<Cinema> cinemas;
 
 	std::vector<Filme> lerFilmes(std::string caminho) {
@@ -91,6 +94,7 @@ private:
 		this->ind_ano_final
 			= this->criarIndiceNumero(ano_final_max, obterAnoFinal);
 		this->ind_duracao = this->criarIndiceNumero(duracao_max, obterDuracao);
+		this->criarIndiceTipo();
 	}
 
 	/* Cria um índice baseado em uma propriedade duma classe */
@@ -102,6 +106,36 @@ private:
 
 		return indices;
 	}
+
+	void criarIndiceTipo(void) {
+		for(unsigned i = 0; i < this->filmes.size(); i++) {
+			unsigned pos = 0;
+
+			/* Percorre o vetor de filmes enquanto o tipo do filme não for
+			   correspondente ao tipo do vetor de tipos, E enquanto não chegar
+			    ao final do vetor de tipos*/
+			while(pos < this->tipos.size() && this->tipos[pos] != this->filmes[i].tipo) {
+				pos++;
+			}
+
+			/* Se o tipo ainda não existir, adicionamos o novo tipo 
+			   e criamos o vetor correspondente */
+			if(pos == this->tipos.size()) {
+				this->tipos.push_back(this->filmes[i].tipo);
+				this->ind_tipo.push_back(std::vector<unsigned>());
+			}
+
+			/* Colocamos o índice no vetor de índices do tipo correspondente*/
+			this->ind_tipo[pos].push_back(i);
+		}
+
+		for(unsigned i = 0; i < this->tipos.size(); ++i) {
+    		std::cout << this->tipos[i] << ": "
+            		  << this->ind_tipo[i].size()
+              		  << " filmes" << std::endl;
+		}
+	}
+
 
 	/* Cria um índice baseado em uma propriedade duma classe */
 	std::vector<unsigned> criarIndiceNumero(unsigned k, key_t f) {
@@ -215,6 +249,9 @@ private:
 			break;
 		case TipoConsulta::GENERO:
 			break;
+		case TipoConsulta::TIPO:
+			return this->consultarFilmePorTipo(consulta->getStr());
+
 		case TipoConsulta::OP_E: {
 			Conjunto a = this->consultarFilme(consulta->getEsq());
 			Conjunto b = this->consultarFilme(consulta->getDir());
@@ -298,6 +335,29 @@ private:
 		return c;
 	}
 
+	Conjunto consultarFilmePorTipo(const std::string &tipo) const {
+		Conjunto c(this->filmes.size());	//cria o conjunto vazio
+
+		unsigned pos = 0;
+
+		/* Percorre o vetor de tipos até encontrar o tipo procurado */
+		while(pos < this->tipos.size() && this->tipos[pos] != tipo) {
+			pos++;
+		}
+
+		/* Caso o tipo não exista, retorna o conjunto c vazio */
+		if(pos == this->tipos.size()) {
+			return c;
+		}
+
+		/* "Setamos" todos os índices do vetor de índices do tipo procurado */
+		for(unsigned indice : this->ind_tipo[pos]) {
+			c.setBit(indice);
+		}
+
+		return c;
+	};
+
 public:
 	/* Lê os dados dos filmes e cinemas */
 	void lerDados(void) {
@@ -333,6 +393,10 @@ public:
 			break;
 		case TipoConsulta::GENERO:
 			break;
+		case TipoConsulta::TIPO:
+			std::cout << "(TIPO: " << no->getStr() << ")" << std::endl;
+			break;
+		
 		case TipoConsulta::OP_E:
 			std::cout << "(E:" << std::endl;
 
