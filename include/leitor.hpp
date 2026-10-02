@@ -98,6 +98,11 @@ public:
 			std::getline(arq, generos);
 			std::istringstream ss { generos };
 			while( std::getline(ss, buf, ',') ) {
+				/* Gênero "nulo" */
+				if( buf == "\\N" ) {
+					continue;
+				}
+
 				filme.generos.push_back(buf);
 			}
 

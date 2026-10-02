@@ -11,6 +11,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <iostream>
 #include <string>
 
 enum struct TipoConsulta {
@@ -56,7 +57,6 @@ struct ConsultaNo {
 private:
 	/* Dado relevante (depende do tipo) */
 	ConsultaDado dado;
-	std::string stringificada;
 
 public:
 	/* Tipo de consulta */
@@ -89,7 +89,7 @@ public:
 		switch( tipo ) {
 		case TipoConsulta::TITULO:
 		case TipoConsulta::GENERO:
-		case TipoConsulta::TIPO: 
+		case TipoConsulta::TIPO:
 			delete[] this->dado.str;
 			break;
 		case TipoConsulta::OP_E:
@@ -150,6 +150,25 @@ public:
 
 	std::string stringificar(void) const {
 		switch( this->tipo ) {
+		case TipoConsulta::TITULO:
+			return "t:" + this->getStr();
+		case TipoConsulta::ADULTO:
+			if( this->isAdulto() ) {
+				return "a:1";
+			}
+			return "a:0";
+		case TipoConsulta::ANO:
+			return "A:" + std::to_string(this->getNum());
+		case TipoConsulta::ANO_FAIXA_INICIAL:
+			return "Ai:" + std::to_string(this->getNum());
+		case TipoConsulta::ANO_FAIXA_FINAL:
+			return "Af:" + std::to_string(this->getNum());
+		case TipoConsulta::DURACAO:
+			return "d:" + std::to_string(this->getNum());
+		case TipoConsulta::GENERO:
+			return "g:" + this->getStr();
+		case TipoConsulta::TIPO:
+			return "T:" + this->getStr();
 		case TipoConsulta::OP_E:
 			return "&:" + this->getEsq()->stringificar()
 				+ " &:" + this->getDir()->stringificar();
@@ -159,17 +178,15 @@ public:
 		case TipoConsulta::OP_NAO:
 			return "~:" + this->getEsq()->stringificar()
 				+ " ~:" + this->getDir()->stringificar();
-		default:
-			return this->stringificada;
 		}
+
+		return "?";
 	}
 };
 
 /* A consulta em si */
 struct Consulta {
 private:
-	std::string stringificada;
-
 	void adicionarNo(ConsultaNo *no) {
 		if( raiz == nullptr ) {
 			raiz = no;
@@ -262,11 +279,15 @@ public:
 		this->adicionarOp(op);
 	}
 
-	void stringificar(void) {
-		this->stringificada = raiz->stringificar();
+	std::string stringificada(void) const {
+		return raiz->stringificar();
 	}
 
-	bool operator==(const Consulta &rhs) const {
-		return this->stringificada == rhs.stringificada;
+	bool operator!(void) const {
+		return !this->raiz;
+	}
+
+	bool operator!=(const Consulta &rhs) const {
+		return this->stringificada() != rhs.stringificada();
 	}
 };

@@ -16,11 +16,13 @@
 struct Conjunto {
 private:
 	const unsigned n;
+	unsigned bitsSetados;
 	std::vector<uint64_t> v;
 
 public:
 	Conjunto(unsigned n)
 		: n { n }
+		, bitsSetados { 0 }
 		, v((n + 64 - 1) / 64, 0) { }
 
 	unsigned qtd(void) const {
@@ -31,12 +33,22 @@ public:
 		return this->v.size();
 	}
 
+	unsigned setados() const {
+		return this->bitsSetados;
+	}
+
 	uint64_t getChunk(const uint64_t i) const {
 		return this->v[i];
 	}
 
 	void setChunk(const uint64_t i, const uint64_t v) {
 		this->v[i] = v;
+
+		uint64_t n = v;
+		while( n ) {
+			n &= (n - 1);
+			++this->bitsSetados;
+		}
 	}
 
 	uint64_t getBit(const uint64_t i) const {
@@ -46,11 +58,19 @@ public:
 
 	void setBit(uint64_t i) {
 		const uint64_t shift = i % 64;
+		if( !getBit(i) ) {
+			++this->bitsSetados;
+		}
+
 		this->v[i >> 6] |= (1UL << shift);
 	}
 
 	void clearBit(uint64_t i) {
 		const uint64_t shift = i % 64;
+		if( getBit(i) ) {
+			--this->bitsSetados;
+		}
+
 		this->v[i >> 6] &= ~(1UL << shift);
 	}
 

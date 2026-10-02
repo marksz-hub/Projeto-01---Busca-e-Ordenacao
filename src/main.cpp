@@ -11,19 +11,22 @@
 #include <iostream>
 #include <limits>
 #include <string>
+#include <vector>
 
 #include "banco_de_dados.hpp"
 #include "consulta.hpp"
 #include "filme.hpp"
 
 void cmdBuscarFilme(BancoDeDados &bd);
-bool cmdBuscarFilmeAdicionarFiltro(Consulta &consulta);
+bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta);
+void cmdPaginarConsulta(BancoDeDados &bd, const Consulta &consulta);
 
-void cmdBuscarCinema(BancoDeDados &bd);
+void cmdBuscarCinema(const BancoDeDados &bd);
 
 int main() {
 	BancoDeDados bd {};
 
+	std::cout << sizeof(unsigned) << std::endl;
 	std::cout << "- - - - - - - - - - - - - - -" << std::endl;
 	std::cout << "  BUSCA de FILMES e CINEMAS" << std::endl;
 	std::cout << "- - - - - - - - - - - - - - -" << std::endl;
@@ -70,7 +73,7 @@ void cmdBuscarFilme(BancoDeDados &bd) {
 
 	bool rodando = true;
 	while( rodando ) {
-		if( !cmdBuscarFilmeAdicionarFiltro(consulta) ) {
+		if( !cmdBuscarFilmeAdicionarFiltro(bd, consulta) ) {
 			std::cout << "# BUSCA CANCELADA!" << std::endl;
 			return;
 		}
@@ -105,14 +108,11 @@ void cmdBuscarFilme(BancoDeDados &bd) {
 		return;
 	}
 
-	for( const Filme &f : bd.consultarFilme(consulta) ) {
-		std::cout << f << std::endl;
-	}
-
 	std::cout << std::endl;
+	cmdPaginarConsulta(bd, consulta);
 }
 
-bool cmdBuscarFilmeAdicionarFiltro(Consulta &consulta) {
+bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
 	unsigned cmd;
 
 	std::cout << "# ADICIONANDO FILTROS" << std::endl;
@@ -123,7 +123,7 @@ bool cmdBuscarFilmeAdicionarFiltro(Consulta &consulta) {
 	std::cout << "  5 Adicionar filtro 'ate o ano...'" << std::endl;
 	std::cout << "  6 Adicionar filtro 'duracao'" << std::endl;
 	std::cout << "  7 Adicionar filtro 'genero'" << std::endl;
-	std::cout << "	8 Adicionar filtro 'tipo'" << std::endl;
+	std::cout << "  8 Adicionar filtro 'tipo'" << std::endl;
 	std::cout << "  0 Cancelar" << std::endl;
 	std::cout << "  > " << std::flush;
 	std::cin >> cmd;
@@ -155,8 +155,21 @@ bool cmdBuscarFilmeAdicionarFiltro(Consulta &consulta) {
 	case 6:
 		break;
 	case 7: {
+		unsigned i;
 		std::string genero;
+
 		std::cout << "+ FILTRAR por 'GENERO' (digite genero)" << std::endl;
+		std::cout << "GENEROS:\n  " << std::flush;
+		for( i = 1; i <= bd.generos.size(); ++i ) {
+			std::cout << bd.generos[i - 1];
+			if( i % 6 == 0 ) {
+				std::cout << std::endl;
+			}
+
+			std::cout << "  " << std::flush;
+		}
+
+		std::cout << std::endl;
 		std::cout << "  > " << std::flush;
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		std::getline(std::cin, genero);
@@ -164,8 +177,19 @@ bool cmdBuscarFilmeAdicionarFiltro(Consulta &consulta) {
 		consulta.adicionarBuscaPorGenero(genero);
 	} break;
 	case 8: {
+		unsigned i;
 		std::string tipo;
+
 		std::cout << "+ FILTRAR por 'TIPO' (digite tipo)" << std::endl;
+		std::cout << "TIPOS:\n  " << std::flush;
+		for( i = 0; i < bd.tipos.size(); ++i ) {
+			std::cout << bd.tipos[i];
+			if( i < bd.tipos.size() - 1 ) {
+				std::cout << "  " << std::flush;
+			}
+		}
+
+		std::cout << std::endl;
 		std::cout << "  > " << std::flush;
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		std::getline(std::cin, tipo);
@@ -179,6 +203,57 @@ bool cmdBuscarFilmeAdicionarFiltro(Consulta &consulta) {
 	return true;
 }
 
-void cmdBuscarCinema(BancoDeDados &bd) {
+void cmdPaginarConsulta(BancoDeDados &bd, const Consulta &consulta) {
+	unsigned pagina = 0, total;
+
+	bool rodando = true;
+	while( rodando ) {
+		unsigned cmd;
+
+		std::vector<Filme *> filmes
+			= bd.consultarFilme(consulta, pagina, total);
+		for( const Filme *f : filmes ) {
+			std::cout << *f << std::endl;
+		}
+
+		if( total <= 50 ) {
+			std::cout << std::endl;
+			return;
+		}
+
+		const unsigned maxPaginas = total / bd.getFilmesPorPagina();
+
+		std::cout << std::endl;
+		std::cout << "PAGINA: " << (pagina + 1) << " de " << maxPaginas
+				  << " | TOTAL: " << total << std::endl;
+
+		std::cout << "# ACAO" << std::endl;
+		std::cout << "  1 Proxima pagina" << std::endl;
+		std::cout << "  2 Pagina anterior" << std::endl;
+		std::cout << "  0 Encerrar" << std::endl;
+		std::cout << "  > " << std::flush;
+		std::cin >> cmd;
+
+		switch( cmd ) {
+		case 1:
+			if( pagina < maxPaginas - 1 ) {
+				++pagina;
+			}
+			break;
+		case 2:
+			if( pagina > 0 ) {
+				--pagina;
+			}
+			break;
+		case 0:
+			rodando = false;
+			break;
+		}
+	}
+
+	std::cout << std::endl;
+}
+
+void cmdBuscarCinema(const BancoDeDados &bd) {
 	(void)bd;
 }

@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include <cstdint>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -34,7 +33,11 @@ private:
 	const std::string CAMINHO_FILMES = "../data/filmes.csv";
 	const std::string CAMINHO_CINEMAS = "../data/cinemas.csv";
 
+	const unsigned FILMES_POR_PAGINA = 50;
+
+	Consulta cache;
 	std::vector<Filme> filmes;
+	std::vector<Filme *> filmes_cache;
 
 	unsigned ano_inicial_max;
 	unsigned ano_final_max;
@@ -45,15 +48,10 @@ private:
 	std::vector<unsigned> ind_ano_inicial;
 	std::vector<unsigned> ind_ano_final;
 	std::vector<unsigned> ind_duracao;
-
-	std::vector<string> tipos;
 	std::vector<std::vector<unsigned>> ind_tipo;
-
-	std::vector<std::string> generos;
 	std::vector<std::vector<unsigned>> ind_genero;
 
-
-	std::vector<Cinema> cinemas;
+	std::vector<Cinema> cinemas, cinemas_cache;
 
 	std::vector<Filme> lerFilmes(std::string caminho) {
 		std::ifstream arq(caminho);
@@ -89,17 +87,37 @@ private:
 	}
 
 	void construirIndicesFilmes(void) {
+		std::cout << "  * Indice: titulo primario... " << std::flush;
 		this->ind_titulo_primario
 			= this->criarIndiceTitulo(compararPorTituloPrimario);
+		std::cout << "OK!" << std::endl;
+
+		std::cout << "  * Indice: titulo original... " << std::flush;
 		this->ind_titulo_original
 			= this->criarIndiceTitulo(compararPorTituloOriginal);
+		std::cout << "OK!" << std::endl;
+
+		std::cout << "  * Indice: ano inicial... " << std::flush;
 		this->ind_ano_inicial
 			= this->criarIndiceNumero(ano_inicial_max, obterAnoInicial);
+		std::cout << "OK!" << std::endl;
+
+		std::cout << "  * Indice: ano final... " << std::flush;
 		this->ind_ano_final
 			= this->criarIndiceNumero(ano_final_max, obterAnoFinal);
+		std::cout << "OK!" << std::endl;
+
+		std::cout << "  * Indice: duracao... " << std::flush;
 		this->ind_duracao = this->criarIndiceNumero(duracao_max, obterDuracao);
+		std::cout << "OK!" << std::endl;
+
+		std::cout << "  * Indice: tipo... " << std::endl;
 		this->criarIndiceTipo();
+		std::cout << "    * OK!" << std::endl;
+
+		std::cout << "  * Indice: genero... " << std::endl;
 		this->criarIndiceGenero();
+		std::cout << "    * OK!" << std::endl;
 	}
 
 	/* Cria um índice baseado em uma propriedade duma classe */
@@ -113,16 +131,15 @@ private:
 	}
 
 	void criarIndiceGenero(void) {
-		for (unsigned i = 0; i < filmes.size(); i++) {
+		for( unsigned i = 0; i < filmes.size(); i++ ) {
+			for( const std::string &genero : filmes[i].generos ) {
+				unsigned pos = 0;
 
-			for(const std::string &genero : filmes[i].generos) {
-					unsigned pos = 0;	
-
-				while(pos < generos.size() && generos[pos] != genero) {
+				while( pos < generos.size() && generos[pos] != genero ) {
 					pos++;
 				}
 
-				if(pos == generos.size()) {
+				if( pos == generos.size() ) {
 					generos.push_back(genero);
 					ind_genero.push_back(std::vector<unsigned>());
 				}
@@ -130,22 +147,28 @@ private:
 				ind_genero[pos].push_back(i);
 			}
 		}
+
+		for( unsigned i = 0; i < this->generos.size(); ++i ) {
+			std::cout << "    * " << this->generos[i] << ": "
+					  << this->ind_genero[i].size() << " filmes" << std::endl;
+		}
 	}
 
 	void criarIndiceTipo(void) {
-		for(unsigned i = 0; i < this->filmes.size(); i++) {
+		for( unsigned i = 0; i < this->filmes.size(); i++ ) {
 			unsigned pos = 0;
 
 			/* Percorre o vetor de filmes enquanto o tipo do filme não for
 			   correspondente ao tipo do vetor de tipos, E enquanto não chegar
-			    ao final do vetor de tipos*/
-			while(pos < this->tipos.size() && this->tipos[pos] != this->filmes[i].tipo) {
+				ao final do vetor de tipos*/
+			while( pos < this->tipos.size()
+				&& this->tipos[pos] != this->filmes[i].tipo ) {
 				pos++;
 			}
 
-			/* Se o tipo ainda não existir, adicionamos o novo tipo 
+			/* Se o tipo ainda não existir, adicionamos o novo tipo
 			   e criamos o vetor correspondente */
-			if(pos == this->tipos.size()) {
+			if( pos == this->tipos.size() ) {
 				this->tipos.push_back(this->filmes[i].tipo);
 				this->ind_tipo.push_back(std::vector<unsigned>());
 			}
@@ -154,13 +177,11 @@ private:
 			this->ind_tipo[pos].push_back(i);
 		}
 
-		for(unsigned i = 0; i < this->tipos.size(); ++i) {
-    		std::cout << this->tipos[i] << ": "
-            		  << this->ind_tipo[i].size()
-              		  << " filmes" << std::endl;
+		for( unsigned i = 0; i < this->tipos.size(); ++i ) {
+			std::cout << "    * " << this->tipos[i] << ": "
+					  << this->ind_tipo[i].size() << " filmes" << std::endl;
 		}
 	}
-
 
 	/* Cria um índice baseado em uma propriedade duma classe */
 	std::vector<unsigned> criarIndiceNumero(unsigned k, key_t f) {
@@ -276,7 +297,6 @@ private:
 			return this->consultarFilmePorGenero(consulta->getStr());
 		case TipoConsulta::TIPO:
 			return this->consultarFilmePorTipo(consulta->getStr());
-
 		case TipoConsulta::OP_E: {
 			Conjunto a = this->consultarFilme(consulta->getEsq());
 			Conjunto b = this->consultarFilme(consulta->getDir());
@@ -366,17 +386,17 @@ private:
 		unsigned pos = 0;
 
 		/* Percorre o vetor de tipos até encontrar o gênero procurado */
-		while(pos < this->generos.size() && this->generos[pos] != genero) {
+		while( pos < this->generos.size() && this->generos[pos] != genero ) {
 			pos++;
 		}
 
 		/* Caso o gênero não exista, retorna o conjunto c vazio */
-		if(pos == this->generos.size()) {
+		if( pos == this->generos.size() ) {
 			return c;
 		}
 
 		/* "Setamos" todos os índices do vetor de índices do gênero procurado */
-		for (unsigned indice : this->ind_genero[pos]) {
+		for( unsigned indice : this->ind_genero[pos] ) {
 			c.setBit(indice);
 		}
 
@@ -384,22 +404,22 @@ private:
 	}
 
 	Conjunto consultarFilmePorTipo(const std::string &tipo) const {
-		Conjunto c(this->filmes.size());	//cria o conjunto vazio
+		Conjunto c(this->filmes.size()); // cria o conjunto vazio
 
 		unsigned pos = 0;
 
 		/* Percorre o vetor de tipos até encontrar o tipo procurado */
-		while(pos < this->tipos.size() && this->tipos[pos] != tipo) {
+		while( pos < this->tipos.size() && this->tipos[pos] != tipo ) {
 			pos++;
 		}
 
 		/* Caso o tipo não exista, retorna o conjunto c vazio */
-		if(pos == this->tipos.size()) {
+		if( pos == this->tipos.size() ) {
 			return c;
 		}
 
 		/* "Setamos" todos os índices do vetor de índices do tipo procurado */
-		for(unsigned indice : this->ind_tipo[pos]) {
+		for( unsigned indice : this->ind_tipo[pos] ) {
 			c.setBit(indice);
 		}
 
@@ -407,6 +427,9 @@ private:
 	};
 
 public:
+	std::vector<std::string> tipos;
+	std::vector<std::string> generos;
+
 	/* Lê os dados dos filmes e cinemas */
 	void lerDados(void) {
 		std::cout << "# Lendo filmes ... " << std::flush;
@@ -417,9 +440,8 @@ public:
 		this->cinemas = this->lerCinemas(this->CAMINHO_CINEMAS);
 		std::cout << "OK!" << std::endl;
 
-		std::cout << "# Construindo indices ... " << std::flush;
+		std::cout << "# Construindo indices ... " << std::endl;
 		this->construirIndicesFilmes();
-		std::cout << "OK!" << std::endl;
 	}
 
 	void printConsulta(ConsultaNo *no) const {
@@ -445,7 +467,6 @@ public:
 		case TipoConsulta::TIPO:
 			std::cout << "(TIPO: " << no->getStr() << ")" << std::endl;
 			break;
-		
 		case TipoConsulta::OP_E:
 			std::cout << "(E:" << std::endl;
 
@@ -472,26 +493,39 @@ public:
 	}
 
 	/* Faz uma consulta por filmes */
-	std::vector<Filme> consultarFilme(
-		const Consulta &consulta, unsigned limite = 50) const {
-		/* TODO:
-		 * - cache
-		 * - paginação
-		 */
-		uint64_t i, j = 0;
+	std::vector<Filme *> consultarFilme(
+		const Consulta &consulta, unsigned pagina, unsigned &total) {
+		std::vector<Filme *> resultado { FILMES_POR_PAGINA };
+		unsigned limite, i, j;
 
-		this->printConsulta(consulta.raiz);
-		const Conjunto conj = this->consultarFilme(consulta.raiz);
-		std::vector<Filme> filmes { limite };
+		if( !this->cache || this->cache != consulta ) {
+			this->cache = consulta;
 
-		for( i = 0; i < conj.qtd() && limite; ++i ) {
-			if( conj.getBit(i) ) {
-				filmes[j++] = this->filmes[i];
-				--limite;
+			const Conjunto conj = this->consultarFilme(consulta.raiz);
+
+			total = conj.setados();
+			this->filmes_cache.resize(total);
+
+			for( i = j = 0; j < total; ++i ) {
+				if( conj.getBit(i) ) {
+					this->filmes_cache[j++] = &this->filmes[i];
+				}
 			}
+		} else {
+			total = this->filmes_cache.size();
 		}
 
-		filmes.resize(j);
-		return filmes;
+		i = pagina * this->FILMES_POR_PAGINA;
+		limite = std::min(i + this->FILMES_POR_PAGINA, total);
+		for( j = 0; i < limite; ++i, ++j ) {
+			resultado[j] = this->filmes_cache[i];
+		}
+
+		resultado.resize(j);
+		return resultado;
+	}
+
+	unsigned getFilmesPorPagina(void) const {
+		return this->FILMES_POR_PAGINA;
 	}
 };
