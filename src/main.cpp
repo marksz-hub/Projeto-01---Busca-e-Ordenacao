@@ -123,6 +123,7 @@ bool cmdBuscarFilmeAdicionarFiltro(Consulta &consulta) {
 	std::cout << "  5 Adicionar filtro 'ate o ano...'" << std::endl;
 	std::cout << "  6 Adicionar filtro 'duracao'" << std::endl;
 	std::cout << "  7 Adicionar filtro 'genero'" << std::endl;
+	std::cout << "	8 Adicionar filtro 'tipo'" << std::endl;
 	std::cout << "  0 Cancelar" << std::endl;
 	std::cout << "  > " << std::flush;
 	std::cin >> cmd;
@@ -157,10 +158,19 @@ bool cmdBuscarFilmeAdicionarFiltro(Consulta &consulta) {
 		std::string genero;
 		std::cout << "+ FILTRAR por 'GENERO' (digite genero)" << std::endl;
 		std::cout << "  > " << std::flush;
-		std::cin.ignore(std::numeric_limits<std::streamsize>::max());
+		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		std::getline(std::cin, genero);
 
 		consulta.adicionarBuscaPorGenero(genero);
+	} break;
+	case 8: {
+		std::string tipo;
+		std::cout << "+ FILTRAR por 'TIPO' (digite tipo)" << std::endl;
+		std::cout << "  > " << std::flush;
+		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+		std::getline(std::cin, tipo);
+
+		consulta.adicionarBuscaPorTipo(tipo);
 	} break;
 	case 0:
 		return false;
