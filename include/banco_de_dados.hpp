@@ -49,6 +49,10 @@ private:
 	std::vector<string> tipos;
 	std::vector<std::vector<unsigned>> ind_tipo;
 
+	std::vector<std::string> generos;
+	std::vector<std::vector<unsigned>> ind_genero;
+
+
 	std::vector<Cinema> cinemas;
 
 	std::vector<Filme> lerFilmes(std::string caminho) {
@@ -95,6 +99,7 @@ private:
 			= this->criarIndiceNumero(ano_final_max, obterAnoFinal);
 		this->ind_duracao = this->criarIndiceNumero(duracao_max, obterDuracao);
 		this->criarIndiceTipo();
+		this->criarIndiceGenero();
 	}
 
 	/* Cria um índice baseado em uma propriedade duma classe */
@@ -105,6 +110,26 @@ private:
 		quicksort(indices, 0, indices.size() - 1, f);
 
 		return indices;
+	}
+
+	void criarIndiceGenero(void) {
+		for (unsigned i = 0; i < filmes.size(); i++) {
+
+			for(const std::string &genero : filmes[i].generos) {
+					unsigned pos = 0;	
+
+				while(pos < generos.size() && generos[pos] != genero) {
+					pos++;
+				}
+
+				if(pos == generos.size()) {
+					generos.push_back(genero);
+					ind_genero.push_back(std::vector<unsigned>());
+				}
+
+				ind_genero[pos].push_back(i);
+			}
+		}
 	}
 
 	void criarIndiceTipo(void) {
@@ -248,7 +273,7 @@ private:
 		case TipoConsulta::DURACAO:
 			break;
 		case TipoConsulta::GENERO:
-			break;
+			return this->consultarFilmePorGenero(consulta->getStr());
 		case TipoConsulta::TIPO:
 			return this->consultarFilmePorTipo(consulta->getStr());
 
@@ -335,6 +360,29 @@ private:
 		return c;
 	}
 
+	Conjunto consultarFilmePorGenero(const std::string &genero) const {
+		Conjunto c(this->filmes.size());
+
+		unsigned pos = 0;
+
+		/* Percorre o vetor de tipos até encontrar o gênero procurado */
+		while(pos < this->generos.size() && this->generos[pos] != genero) {
+			pos++;
+		}
+
+		/* Caso o gênero não exista, retorna o conjunto c vazio */
+		if(pos == this->generos.size()) {
+			return c;
+		}
+
+		/* "Setamos" todos os índices do vetor de índices do gênero procurado */
+		for (unsigned indice : this->ind_genero[pos]) {
+			c.setBit(indice);
+		}
+
+		return c;
+	}
+
 	Conjunto consultarFilmePorTipo(const std::string &tipo) const {
 		Conjunto c(this->filmes.size());	//cria o conjunto vazio
 
@@ -392,6 +440,7 @@ public:
 		case TipoConsulta::DURACAO:
 			break;
 		case TipoConsulta::GENERO:
+			std::cout << "(GENERO: " << no->getStr() << ")" << std::endl;
 			break;
 		case TipoConsulta::TIPO:
 			std::cout << "(TIPO: " << no->getStr() << ")" << std::endl;
