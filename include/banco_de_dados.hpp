@@ -267,118 +267,116 @@ private:
 		v = ordenado;
 	}
 
-
-
 	void construirIndicesCinemas() {
-		std::cout << "	Indice: tipo... " << std::endl;
+		std::cout << "	Indice: tipo... " << std::flush;
 		this->criarIndiceTipoCinema();
 		std::cout << " 	OK!" << std::endl;
 
-		std::cout << "	Indice: genero... " << std::endl;
+		std::cout << "	Indice: genero... " << std::flush;
 		this->criarIndiceGeneroCinema();
 		std::cout << " 	OK!" << std::endl;
 	}
 
 	int encontrarFilme(const std::string &id) const {
-		for(unsigned i = 0; i < filmes.size(); i++) {
-			if(filmes[i].id == id) {
+		for( unsigned i = 0; i < filmes.size(); i++ ) {
+			if( filmes[i].id == id ) {
 				return i;
 			}
 		}
 		return -1;
 	}
-	
+
 	void criarIndiceTipoCinema(void) {
 		this->ind_tipo_cinema.resize(this->tipos.size());
 
-		for(unsigned i = 0; i < this->cinemas.size(); i++) {
+		for( unsigned i = 0; i < this->cinemas.size(); i++ ) {
 
-			for(const std::string &idFilme : cinemas[i].filmes_em_exibicao) {
+			for( const std::string &idFilme : cinemas[i].filmes_em_exibicao ) {
 
-				int indiceFilme = this->encontrarFilme(idFilme);
-
-				if(indiceFilme == -1) {
-					continue;
-				}
-
-				const std::string &tipo = this->filmes[indiceFilme].tipo;
-
-				unsigned pos = 0;
-				while(pos < this->tipos.size() && this->tipos[pos] != tipo) {
-					pos++;
-				}
-
-				if(pos == this->tipos.size()){
-					continue;	
-				}
-
-				bool jaExiste = false;
-
-				for(unsigned cinema : this->ind_tipo_cinema[pos]) {
-					if(cinema == i) {
-						jaExiste = true;
-						break;
-					}
-				}
-
-				if(!jaExiste) {
-					this->ind_tipo_cinema[pos].push_back(i);
-				}
-			}
-		}
-		for( unsigned i = 0; i < this->tipos.size(); ++i ) {
-			std::cout << "    * " << this->tipos[i] << ": "
-				  	  << this->ind_tipo_cinema[i].size()
-				  	  << " cinemas" << std::endl;
-		}
-	}
-
-	void criarIndiceGeneroCinema(void) {
-		this->ind_genero_cinema.resize(this->generos.size());
-
-		for(unsigned i = 0; i < this->cinemas.size(); i++) {
-
-			for(const std::string &idFilme : this->cinemas[i].filmes_em_exibicao) {
 				int indiceFilme = this->encontrarFilme(idFilme);
 
 				if( indiceFilme == -1 ) {
 					continue;
 				}
 
-				for(const std::string &genero : this->filmes[indiceFilme].generos) {
+				const std::string &tipo = this->filmes[indiceFilme].tipo;
+
+				unsigned pos = 0;
+				while( pos < this->tipos.size() && this->tipos[pos] != tipo ) {
+					pos++;
+				}
+
+				if( pos == this->tipos.size() ) {
+					continue;
+				}
+
+				bool jaExiste = false;
+
+				for( unsigned cinema : this->ind_tipo_cinema[pos] ) {
+					if( cinema == i ) {
+						jaExiste = true;
+						break;
+					}
+				}
+
+				if( !jaExiste ) {
+					this->ind_tipo_cinema[pos].push_back(i);
+				}
+			}
+		}
+		for( unsigned i = 0; i < this->tipos.size(); ++i ) {
+			std::cout << "    * " << this->tipos[i] << ": "
+					  << this->ind_tipo_cinema[i].size() << " cinemas"
+					  << std::endl;
+		}
+	}
+
+	void criarIndiceGeneroCinema(void) {
+		this->ind_genero_cinema.resize(this->generos.size());
+
+		for( unsigned i = 0; i < this->cinemas.size(); i++ ) {
+
+			for( const std::string &idFilme :
+				this->cinemas[i].filmes_em_exibicao ) {
+				int indiceFilme = this->encontrarFilme(idFilme);
+
+				if( indiceFilme == -1 ) {
+					continue;
+				}
+
+				for( const std::string &genero :
+					this->filmes[indiceFilme].generos ) {
 					unsigned pos = 0;
 
-					while(pos < this->generos.size() && this->generos[pos] != genero) {
+					while( pos < this->generos.size()
+						&& this->generos[pos] != genero ) {
 						pos++;
 					}
 
-					if(pos == this->generos.size()) {
+					if( pos == this->generos.size() ) {
 						continue;
 					}
 
 					bool jaExiste = false;
-					for(unsigned cinema : this->ind_genero_cinema[pos]) {
-						if(cinema == i) {
+					for( unsigned cinema : this->ind_genero_cinema[pos] ) {
+						if( cinema == i ) {
 							jaExiste = true;
 							break;
 						}
 					}
 
-					if(!jaExiste) {
+					if( !jaExiste ) {
 						this->ind_genero_cinema[pos].push_back(i);
 					}
 				}
 			}
 		}
 		for( unsigned i = 0; i < this->generos.size(); ++i ) {
-		std::cout << "    * " << this->generos[i] << ": "
-				  << this->ind_genero_cinema[i].size()
-				  << " cinemas" << std::endl;
+			std::cout << "    * " << this->generos[i] << ": "
+					  << this->ind_genero_cinema[i].size() << " cinemas"
+					  << std::endl;
 		}
 	}
-
-
-
 
 	static bool compararPorTituloPrimario(Filme &a, Filme &b) {
 		return a.titulo_primario < b.titulo_primario;
@@ -547,20 +545,17 @@ private:
 		return c;
 	};
 
-
-
-
 	Conjunto consultarCinema(const ConsultaNo *consulta) const {
-		switch(consulta->tipo) {
+		switch( consulta->tipo ) {
 		case TipoConsulta::GENERO:
 			return this->consultarCinemaPorGenero(consulta->getStr());
 		case TipoConsulta::TIPO:
 			return this->consultarCinemaPorTipo(consulta->getStr());
 
 		case TipoConsulta::OP_E: {
-        Conjunto a = this->consultarCinema(consulta->getEsq());
-        Conjunto b = this->consultarCinema(consulta->getDir());
-        return a & b;
+			Conjunto a = this->consultarCinema(consulta->getEsq());
+			Conjunto b = this->consultarCinema(consulta->getDir());
+			return a & b;
 		}
 		case TipoConsulta::OP_OU: {
 			Conjunto a = this->consultarCinema(consulta->getEsq());
@@ -577,7 +572,7 @@ private:
 		}
 
 		std::cerr << "consulta de cinema invalida" << std::endl;
-    	std::exit(EXIT_FAILURE);
+		std::exit(EXIT_FAILURE);
 	}
 
 	Conjunto consultarCinemaPorGenero(const std::string &genero) const {
@@ -585,8 +580,7 @@ private:
 
 		unsigned pos = 0;
 
-		while( pos < this->generos.size()
-			&& this->generos[pos] != genero ) {
+		while( pos < this->generos.size() && this->generos[pos] != genero ) {
 			++pos;
 		}
 
@@ -600,7 +594,6 @@ private:
 
 		return c;
 	}
-
 
 	Conjunto consultarCinemaPorTipo(const std::string &tipo) const {
 		Conjunto c(this->cinemas.size()); // cria o conjunto vazio
@@ -624,10 +617,6 @@ private:
 
 		return c;
 	}
-
-
-
-
 
 public:
 	std::vector<std::string> tipos;
@@ -734,8 +723,6 @@ public:
 	unsigned getFilmesPorPagina(void) const {
 		return this->FILMES_POR_PAGINA;
 	}
-
-
 
 	std::vector<Cinema *> consultarCinema(
 		const Consulta &consulta, unsigned pagina, unsigned &total) {

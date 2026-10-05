@@ -22,7 +22,7 @@ bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta);
 void cmdPaginarConsulta(BancoDeDados &bd, const Consulta &consulta);
 
 void cmdBuscarCinema(BancoDeDados &bd);
-bool cmdBuscarCinemaAdicionarFiltro(BancoDeDados &bd, Consulta &consulta);
+bool cmdBuscarCinemaAdicionarFiltro(Consulta &consulta);
 void cmdPaginarConsultaCinema(BancoDeDados &bd, const Consulta &consulta);
 
 int main() {
@@ -256,15 +256,12 @@ void cmdPaginarConsulta(BancoDeDados &bd, const Consulta &consulta) {
 	std::cout << std::endl;
 }
 
-
-
-
 void cmdBuscarCinema(BancoDeDados &bd) {
 	Consulta consulta;
 
 	bool rodando = true;
 	while( rodando ) {
-		if( !cmdBuscarCinemaAdicionarFiltro(bd, consulta) ) {
+		if( !cmdBuscarCinemaAdicionarFiltro(consulta) ) {
 			std::cout << "# BUSCA CANCELADA!" << std::endl;
 			return;
 		}
@@ -303,9 +300,7 @@ void cmdBuscarCinema(BancoDeDados &bd) {
 	cmdPaginarConsultaCinema(bd, consulta);
 }
 
-
-
-bool cmdBuscarCinemaAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
+bool cmdBuscarCinemaAdicionarFiltro(Consulta &consulta) {
 	unsigned cmd;
 
 	std::cout << "# ADICIONANDO FILTROS" << std::endl;
@@ -334,13 +329,12 @@ bool cmdBuscarCinemaAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
 
 		consulta.adicionarBuscaPorTipo(tipo);
 	} break;
-	case 0: 
+	case 0:
 		return false;
 	}
 
 	return true;
 }
-
 
 void cmdPaginarConsultaCinema(BancoDeDados &bd, const Consulta &consulta) {
 	unsigned pagina = 0, total;
