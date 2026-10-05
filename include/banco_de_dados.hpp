@@ -35,6 +35,7 @@ private:
 	const std::string CAMINHO_CINEMAS = "../data/cinemas.csv";
 
 	const unsigned FILMES_POR_PAGINA = 50;
+	const unsigned CINEMAS_POR_PAGINA = 50;
 
 	Consulta cache;
 	std::vector<Filme> filmes;
@@ -49,10 +50,16 @@ private:
 	std::vector<unsigned> ind_ano_inicial;
 	std::vector<unsigned> ind_ano_final;
 	std::vector<unsigned> ind_duracao;
+
 	std::vector<std::vector<unsigned>> ind_tipo;
 	std::vector<std::vector<unsigned>> ind_genero;
 
-	std::vector<Cinema> cinemas, cinemas_cache;
+	std::vector<std::vector<unsigned>> ind_tipo_cinema;
+	std::vector<std::vector<unsigned>> ind_genero_cinema;
+
+	Consulta cache_cinema;
+	std::vector<Cinema> cinemas;
+	std::vector<Cinema *> cinemas_cache;
 
 	std::vector<Filme> lerFilmes(std::string caminho) {
 		std::ifstream arq(caminho);
