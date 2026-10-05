@@ -62,7 +62,9 @@ public:
 			Filme filme;
 			std::string buf, generos;
 
-			std::getline(arq, filme.id, '\t');
+			std::getline(arq, buf, '\t');
+			filme.id = buf.substr(2);
+
 			std::getline(arq, filme.tipo, '\t');
 			std::getline(arq, filme.titulo_primario, '\t');
 			std::getline(arq, filme.titulo_original, '\t');
@@ -140,13 +142,14 @@ public:
 		arq.ignore(1024, '\n');
 		while( arq.peek() != EOF ) {
 			Cinema cinema;
-			std::string buf, nome_do_cinema;
+			std::string buf, filmes;
 
-			std::getline(arq, cinema.id, ',');
+			std::getline(arq, buf, ',');
+			cinema.id = buf.substr(2);
 
-			std::getline(arq, nome_do_cinema, ',');
-			removerEspacoInicial(nome_do_cinema);
-			cinema.nome_do_cinema = nome_do_cinema;
+			std::getline(arq, buf, ',');
+			removerEspacoInicial(buf);
+			cinema.nome_do_cinema = buf;
 
 			/* Lê as coordenadas e converte seus valores de string para inteiro
 			 */
@@ -163,9 +166,11 @@ public:
 			 * com a quantidade de filmes (campos) podendo variar entre os
 			 * cinemas
 			 */
-			while( std::getline(arq, buf, ',') ) {
+			std::getline(arq, filmes);
+			std::istringstream ss { filmes };
+			while( std::getline(ss, buf, ',') ) {
 				removerEspacoInicial(buf);
-				cinema.filmes_em_exibicao.push_back(buf);
+				cinema.filmes_em_exibicao.push_back(buf.substr(2));
 			}
 
 			cinemas.push_back(cinema);

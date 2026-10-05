@@ -19,16 +19,18 @@
 
 void cmdBuscarFilme(BancoDeDados &bd);
 bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta);
-void cmdPaginarConsulta(BancoDeDados &bd, const Consulta &consulta);
+void cmdPaginarConsultaFilme(BancoDeDados &bd, const Consulta &consulta);
 
 void cmdBuscarCinema(BancoDeDados &bd);
-bool cmdBuscarCinemaAdicionarFiltro(Consulta &consulta);
+bool cmdBuscarCinemaAdicionarFiltro(const BancoDeDados &bd, Consulta &consulta);
 void cmdPaginarConsultaCinema(BancoDeDados &bd, const Consulta &consulta);
+
+void imprimirGeneros(const BancoDeDados &bd);
+void imprimirTipos(const BancoDeDados &bd);
 
 int main() {
 	BancoDeDados bd {};
 
-	std::cout << sizeof(unsigned) << std::endl;
 	std::cout << "- - - - - - - - - - - - - - -" << std::endl;
 	std::cout << "  BUSCA de FILMES e CINEMAS" << std::endl;
 	std::cout << "- - - - - - - - - - - - - - -" << std::endl;
@@ -111,101 +113,93 @@ void cmdBuscarFilme(BancoDeDados &bd) {
 	}
 
 	std::cout << std::endl;
-	cmdPaginarConsulta(bd, consulta);
+	cmdPaginarConsultaFilme(bd, consulta);
 }
 
 bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
-	unsigned cmd;
+	while( true ) {
+		unsigned cmd;
 
-	std::cout << "# ADICIONANDO FILTROS" << std::endl;
-	std::cout << "  1 Adicionar filtro 'titulo'" << std::endl;
-	std::cout << "  2 Adicionar filtro 'adulto'" << std::endl;
-	std::cout << "  3 Adicionar filtro 'ano'" << std::endl;
-	std::cout << "  4 Adicionar filtro 'a partir do ano...'" << std::endl;
-	std::cout << "  5 Adicionar filtro 'ate o ano...'" << std::endl;
-	std::cout << "  6 Adicionar filtro 'duracao'" << std::endl;
-	std::cout << "  7 Adicionar filtro 'genero'" << std::endl;
-	std::cout << "  8 Adicionar filtro 'tipo'" << std::endl;
-	std::cout << "  0 Cancelar" << std::endl;
-	std::cout << "  > " << std::flush;
-	std::cin >> cmd;
-
-	switch( cmd ) {
-	case 1: {
-		std::string titulo;
-		std::cout << "+ FILTRAR por 'TITULO' (digite titulo)" << std::endl;
+		std::cout << "# ADICIONANDO FILTROS" << std::endl;
+		std::cout << "  1 Adicionar filtro 'titulo'" << std::endl;
+		std::cout << "  2 Adicionar filtro 'adulto'" << std::endl;
+		std::cout << "  3 Adicionar filtro 'ano'" << std::endl;
+		std::cout << "  4 Adicionar filtro 'a partir do ano...'" << std::endl;
+		std::cout << "  5 Adicionar filtro 'ate o ano...'" << std::endl;
+		std::cout << "  6 Adicionar filtro 'duracao'" << std::endl;
+		std::cout << "  7 Adicionar filtro 'genero'" << std::endl;
+		std::cout << "  8 Adicionar filtro 'tipo'" << std::endl;
+		std::cout << "  0 Cancelar" << std::endl;
 		std::cout << "  > " << std::flush;
-		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		std::getline(std::cin, titulo);
+		std::cin >> cmd;
 
-		consulta.adicionarBuscaPorTitulo(titulo);
-	} break;
-	case 2: {
-		unsigned adulto;
-		std::cout << "+ FILTRAR por 'ADULTO' (digite 1 ou 0)" << std::endl;
-		std::cout << "  > " << std::flush;
-		std::cin >> adulto;
+		switch( cmd ) {
+		case 1: {
+			std::string titulo;
+			std::cout << "+ FILTRAR por 'TITULO' (digite titulo)" << std::endl;
+			std::cout << "  > " << std::flush;
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+			std::getline(std::cin, titulo);
 
-		consulta.adicionarBuscaPorAdulto(adulto == 1);
-	} break;
-	case 3:
-		break;
-	case 4:
-		break;
-	case 5:
-		break;
-	case 6:
-		break;
-	case 7: {
-		unsigned i;
-		std::string genero;
+			consulta.adicionarBuscaPorTitulo(titulo);
+		} break;
+		case 2: {
+			unsigned adulto;
+			std::cout << "+ FILTRAR por 'ADULTO' (digite 1 ou 0)" << std::endl;
+			std::cout << "  > " << std::flush;
+			std::cin >> adulto;
 
-		std::cout << "+ FILTRAR por 'GENERO' (digite genero)" << std::endl;
-		std::cout << "GENEROS:\n  " << std::flush;
-		for( i = 1; i <= bd.generos.size(); ++i ) {
-			std::cout << bd.generos[i - 1];
-			if( i % 6 == 0 ) {
-				std::cout << std::endl;
-			}
+			consulta.adicionarBuscaPorAdulto(adulto == 1);
+		} break;
+		case 3:
+			std::cout << "NAO IMPLEMENTADO" << std::endl;
+			continue;
+		case 4:
+			std::cout << "NAO IMPLEMENTADO" << std::endl;
+			continue;
+		case 5:
+			std::cout << "NAO IMPLEMENTADO" << std::endl;
+			continue;
+		case 6:
+			std::cout << "NAO IMPLEMENTADO" << std::endl;
+			continue;
+		case 7: {
+			std::string genero;
 
-			std::cout << "  " << std::flush;
+			std::cout << "+ FILTRAR por 'GENERO' (digite genero)" << std::endl;
+			imprimirGeneros(bd);
+			std::cout << std::endl;
+			std::cout << "  > " << std::flush;
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+			std::getline(std::cin, genero);
+
+			consulta.adicionarBuscaPorGenero(genero);
+		} break;
+		case 8: {
+			std::string tipo;
+
+			std::cout << "+ FILTRAR por 'TIPO' (digite tipo)" << std::endl;
+			imprimirTipos(bd);
+
+			std::cout << std::endl;
+			std::cout << "  > " << std::flush;
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+			std::getline(std::cin, tipo);
+
+			consulta.adicionarBuscaPorTipo(tipo);
+		} break;
+		case 0:
+			return false;
+		default:
+			std::cout << "Comando invalido, tente novamente:" << std::endl;
+			continue;
 		}
 
-		std::cout << std::endl;
-		std::cout << "  > " << std::flush;
-		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		std::getline(std::cin, genero);
-
-		consulta.adicionarBuscaPorGenero(genero);
-	} break;
-	case 8: {
-		unsigned i;
-		std::string tipo;
-
-		std::cout << "+ FILTRAR por 'TIPO' (digite tipo)" << std::endl;
-		std::cout << "TIPOS:\n  " << std::flush;
-		for( i = 0; i < bd.tipos.size(); ++i ) {
-			std::cout << bd.tipos[i];
-			if( i < bd.tipos.size() - 1 ) {
-				std::cout << "  " << std::flush;
-			}
-		}
-
-		std::cout << std::endl;
-		std::cout << "  > " << std::flush;
-		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		std::getline(std::cin, tipo);
-
-		consulta.adicionarBuscaPorTipo(tipo);
-	} break;
-	case 0:
-		return false;
+		return true;
 	}
-
-	return true;
 }
 
-void cmdPaginarConsulta(BancoDeDados &bd, const Consulta &consulta) {
+void cmdPaginarConsultaFilme(BancoDeDados &bd, const Consulta &consulta) {
 	unsigned pagina = 0, total;
 
 	bool rodando = true;
@@ -261,7 +255,7 @@ void cmdBuscarCinema(BancoDeDados &bd) {
 
 	bool rodando = true;
 	while( rodando ) {
-		if( !cmdBuscarCinemaAdicionarFiltro(consulta) ) {
+		if( !cmdBuscarCinemaAdicionarFiltro(bd, consulta) ) {
 			std::cout << "# BUSCA CANCELADA!" << std::endl;
 			return;
 		}
@@ -300,7 +294,8 @@ void cmdBuscarCinema(BancoDeDados &bd) {
 	cmdPaginarConsultaCinema(bd, consulta);
 }
 
-bool cmdBuscarCinemaAdicionarFiltro(Consulta &consulta) {
+bool cmdBuscarCinemaAdicionarFiltro(
+	const BancoDeDados &bd, Consulta &consulta) {
 	unsigned cmd;
 
 	std::cout << "# ADICIONANDO FILTROS" << std::endl;
@@ -314,6 +309,8 @@ bool cmdBuscarCinemaAdicionarFiltro(Consulta &consulta) {
 	case 1: {
 		std::string genero;
 		std::cout << "+ FILTRAR por 'GENERO' (digite genero)" << std::endl;
+		imprimirGeneros(bd);
+		std::cout << std::endl;
 		std::cout << "  > " << std::flush;
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		std::getline(std::cin, genero);
@@ -323,6 +320,8 @@ bool cmdBuscarCinemaAdicionarFiltro(Consulta &consulta) {
 	case 2: {
 		std::string tipo;
 		std::cout << "+ FILTRAR por 'TIPO' (digite tipo)" << std::endl;
+		imprimirTipos(bd);
+		std::cout << std::endl;
 		std::cout << "  > " << std::flush;
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		std::getline(std::cin, tipo);
@@ -385,4 +384,30 @@ void cmdPaginarConsultaCinema(BancoDeDados &bd, const Consulta &consulta) {
 	}
 
 	std::cout << std::endl;
+}
+
+void imprimirGeneros(const BancoDeDados &bd) {
+	unsigned i;
+
+	std::cout << "GENEROS:\n  " << std::flush;
+	for( i = 1; i <= bd.generos.size(); ++i ) {
+		std::cout << bd.generos[i - 1];
+		if( i % 6 == 0 ) {
+			std::cout << std::endl;
+		}
+
+		std::cout << "  " << std::flush;
+	}
+}
+
+void imprimirTipos(const BancoDeDados &bd) {
+	unsigned i;
+
+	std::cout << "TIPOS:\n  " << std::flush;
+	for( i = 0; i < bd.tipos.size(); ++i ) {
+		std::cout << bd.tipos[i];
+		if( i < bd.tipos.size() - 1 ) {
+			std::cout << "  " << std::flush;
+		}
+	}
 }

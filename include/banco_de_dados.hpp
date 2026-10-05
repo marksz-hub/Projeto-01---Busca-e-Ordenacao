@@ -277,37 +277,41 @@ private:
 	}
 
 	void construirIndicesCinemas() {
-		std::cout << "	Indice: tipo... " << std::flush;
+		std::cout << "  * Indice: tipo... " << std::endl;
 		this->criarIndiceTipoCinema();
-		std::cout << " 	OK!" << std::endl;
+		std::cout << "    * OK!" << std::endl;
 
-		std::cout << "	Indice: genero... " << std::flush;
+		std::cout << "  * Indice: genero... " << std::endl;
 		this->criarIndiceGeneroCinema();
-		std::cout << " 	OK!" << std::endl;
+		std::cout << "    * OK!" << std::endl;
 	}
 
-	int encontrarFilme(const std::string &id) const {
-		for( unsigned i = 0; i < filmes.size(); i++ ) {
-			if( filmes[i].id == id ) {
-				return i;
+	unsigned encontrarFilme(const std::string &id) const {
+		unsigned esq = 0, dir = filmes.size() - 1, m;
+
+		while( esq < dir ) {
+			m = esq + ((dir - esq) / 2);
+
+			if( filmes[m].id < id ) {
+				esq = m + 1;
+			} else {
+				dir = m - 1;
 			}
 		}
-		return -1;
+
+		while( filmes[esq].id < id ) {
+			++esq;
+		}
+
+		return esq;
 	}
 
 	void criarIndiceTipoCinema(void) {
 		this->ind_tipo_cinema.resize(this->tipos.size());
 
 		for( unsigned i = 0; i < this->cinemas.size(); i++ ) {
-
 			for( const std::string &idFilme : cinemas[i].filmes_em_exibicao ) {
-
-				int indiceFilme = this->encontrarFilme(idFilme);
-
-				if( indiceFilme == -1 ) {
-					continue;
-				}
-
+				unsigned indiceFilme = this->encontrarFilme(idFilme);
 				const std::string &tipo = this->filmes[indiceFilme].tipo;
 
 				unsigned pos = 0;
@@ -320,7 +324,6 @@ private:
 				}
 
 				bool jaExiste = false;
-
 				for( unsigned cinema : this->ind_tipo_cinema[pos] ) {
 					if( cinema == i ) {
 						jaExiste = true;
@@ -344,11 +347,9 @@ private:
 		this->ind_genero_cinema.resize(this->generos.size());
 
 		for( unsigned i = 0; i < this->cinemas.size(); i++ ) {
-
 			for( const std::string &idFilme :
 				this->cinemas[i].filmes_em_exibicao ) {
 				int indiceFilme = this->encontrarFilme(idFilme);
-
 				if( indiceFilme == -1 ) {
 					continue;
 				}
@@ -385,14 +386,6 @@ private:
 					  << this->ind_genero_cinema[i].size() << " cinemas"
 					  << std::endl;
 		}
-	}
-
-	static bool compararPorTituloPrimario(Filme &a, Filme &b) {
-		return a.titulo_primario < b.titulo_primario;
-	}
-
-	static bool compararPorTituloOriginal(Filme &a, Filme &b) {
-		return a.titulo_original < b.titulo_original;
 	}
 
 	static unsigned obterAnoInicial(Filme &f) {
@@ -451,26 +444,26 @@ private:
 
 	Conjunto consultarFilmePorTitulo(const std::string &titulo) const {
 		Conjunto c;
-		unsigned l = 0, r = this->filmes.size() - 1;
+		unsigned esq = 0, dir = this->filmes.size() - 1;
 
 		/* Busca binária pelo título */
-		while( l < r ) {
-			const unsigned m = (l + r) / 2;
+		while( esq < dir ) {
+			const unsigned m = (esq + dir) / 2;
 			const std::string &valor
 				= this->filmes[this->ind_titulo_original[m]].titulo_original;
 
 			if( valor < titulo ) {
-				l = m + 1;
+				esq = m + 1;
 			} else {
-				r = m;
+				dir = m;
 			}
 		}
 
 		/* Se cairmos nesse caso, não encontramos nenhum filme...
 		 * Sai da função
 		 */
-		if( l >= this->filmes.size()
-			|| this->filmes[this->ind_titulo_original[l]].titulo_original
+		if( esq >= this->filmes.size()
+			|| this->filmes[this->ind_titulo_original[esq]].titulo_original
 				!= titulo ) {
 			/* TODO: alguma forma de dizer 'ei, não achamos nada.'
 			 * Ou talvez só retornar o set vazio já seja suficiente...
@@ -502,7 +495,7 @@ private:
 		 *                                             com a busca
 		 *
 		 * */
-		unsigned ok = l;
+		unsigned ok = esq;
 		do {
 			c.add(this->ind_titulo_original[ok++]);
 		} while( ok < this->filmes.size()
@@ -590,7 +583,7 @@ private:
 	}
 
 	Conjunto consultarCinemaPorGenero(const std::string &genero) const {
-		Conjunto c(this->cinemas.size());
+		Conjunto c;
 
 		unsigned pos = 0;
 
@@ -610,7 +603,7 @@ private:
 	}
 
 	Conjunto consultarCinemaPorTipo(const std::string &tipo) const {
-		Conjunto c(this->cinemas.size()); // cria o conjunto vazio
+		Conjunto c; // cria o conjunto vazio
 
 		unsigned pos = 0;
 
