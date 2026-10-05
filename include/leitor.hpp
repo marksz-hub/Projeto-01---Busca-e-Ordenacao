@@ -17,6 +17,7 @@
 
 #include "cinema.hpp"
 #include "filme.hpp"
+#include "set.hpp"
 
 class Leitor {
 protected:
@@ -39,9 +40,11 @@ public:
 	unsigned ano_final_max = 0;
 	unsigned duracao_max = 0;
 
-	LeitorFilme(std::string caminho) {
-		this->caminho = caminho;
-	}
+	std::vector<Conjunto> ind_adulto;
+
+	LeitorFilme(std::string caminho)
+		: caminho { caminho }
+		, ind_adulto(2) { }
 
 	std::vector<Filme> ler(void) {
 		std::ifstream arq(this->caminho);
@@ -65,7 +68,8 @@ public:
 			std::getline(arq, filme.titulo_original, '\t');
 
 			std::getline(arq, buf, '\t');
-			filme.adulto = (buf == "1");
+			filme.adulto = buf == "1";
+			this->ind_adulto[filme.adulto].add(filmes.size());
 
 			/* Lê o ano inicial do filme */
 			std::getline(arq, buf, '\t');

@@ -11,119 +11,131 @@
 
 #include <algorithm>
 #include <vector>
-#include <cstdint>
 
 struct Conjunto {
 private:
-	const unsigned n;
-	unsigned bitsSetados;
-	std::vector<uint64_t> v;
+	unsigned k;
 
 public:
-	Conjunto(unsigned n)
-		: n { n }
-		, bitsSetados { 0 }
-		, v((n + 64 - 1) / 64, 0) { }
+	bool ordenado;
+	std::vector<unsigned> v;
 
-	unsigned qtd(void) const {
-		return n;
-	}
+	Conjunto()
+		: k { 0 }
+		, ordenado { false } { }
+
+	Conjunto(unsigned n)
+		: k { 0 }
+		, ordenado { false }
+		, v(n, 0) { }
 
 	unsigned tamanho(void) const {
 		return this->v.size();
 	}
 
-	unsigned setados() const {
-		return this->bitsSetados;
+	void add(unsigned v) {
+		if( this->tamanho() > 1 && this->v[this->tamanho() - 2] == v ) {
+			return;
+		}
+
+		this->v.push_back(v);
+		this->k = std::max(v, this->k);
+		this->ordenado = false;
 	}
 
-	uint64_t getChunk(const uint64_t i) const {
+	unsigned get(unsigned i) {
 		return this->v[i];
 	}
 
-	void setChunk(const uint64_t i, const uint64_t v) {
-		this->v[i] = v;
-
-		uint64_t n = v;
-		while( n ) {
-			n &= (n - 1);
-			++this->bitsSetados;
-		}
-	}
-
-	uint64_t getBit(const uint64_t i) const {
-		const uint64_t shift = i % 64;
-		return this->v[i >> 6] & (1UL << shift);
-	}
-
-	void setBit(uint64_t i) {
-		const uint64_t shift = i % 64;
-		if( !getBit(i) ) {
-			++this->bitsSetados;
+	void ordenar(void) {
+		if( this->ordenado ) {
+			return;
 		}
 
-		this->v[i >> 6] |= (1UL << shift);
-	}
+		std::vector<unsigned> contagem(k + 1, 0);
+		std::vector<unsigned> ordenado(v.size());
+		unsigned i, j;
 
-	void clearBit(uint64_t i) {
-		const uint64_t shift = i % 64;
-		if( getBit(i) ) {
-			--this->bitsSetados;
+		for( i = 0; i < v.size(); ++i ) {
+			j = v[i];
+			contagem[j] = contagem[j] + 1;
 		}
 
-		this->v[i >> 6] &= ~(1UL << shift);
+		for( i = 1; i <= k; ++i ) {
+			contagem[i] = contagem[i] + contagem[i - 1];
+		}
+
+		for( i = v.size(); i > 0; --i ) {
+			j = v[i - 1];
+			contagem[j] = contagem[j] - 1;
+			ordenado[contagem[j]] = v[i - 1];
+		}
+
+		v = ordenado;
 	}
 
 	/* Obtém a intersecção de dois conjuntos
 	 * C = A & B
 	 */
-	Conjunto interseccao(const Conjunto &lhs, const Conjunto &rhs) const {
-		const unsigned n = std::min(lhs.qtd(), rhs.qtd());
-		Conjunto novo { n };
+	Conjunto interseccao(Conjunto &lhs, Conjunto &rhs) const {
+		Conjunto novo;
+		unsigned i = 0, j = 0;
 
-		for( unsigned i = 0; i < novo.tamanho(); ++i ) {
-			novo.setChunk(i, lhs.getChunk(i) & rhs.getChunk(i));
+		lhs.ordenar();
+		rhs.ordenar();
+
+		while( i < lhs.tamanho() && j < rhs.tamanho() ) {
+			const unsigned x = lhs.get(i);
+			const unsigned y = rhs.get(j);
+			if( x == y ) {
+				novo.add(x);
+			} else if( x < y ) {
+				++i;
+			} else {
+				++j;
+			}
 		}
 
+		novo.ordenado = true;
 		return novo;
 	}
 
 	/* Obtém a união entre dois conjuntos
 	 * C = A | B
 	 */
-	Conjunto uniao(const Conjunto &lhs, const Conjunto &rhs) const {
-		const unsigned n = std::min(lhs.qtd(), rhs.qtd());
-		Conjunto novo { n };
+	Conjunto uniao(Conjunto &lhs, Conjunto &rhs) const {
+		Conjunto novo;
+		unsigned i = 0, j = 0;
 
-		for( unsigned i = 0; i < novo.tamanho(); ++i ) {
-			novo.setChunk(i, lhs.getChunk(i) | rhs.getChunk(i));
+		lhs.ordenar();
+		rhs.ordenar();
+
+		while( i < lhs.tamanho() && j < rhs.tamanho() ) {
+			const unsigned x = lhs.get(i);
+			const unsigned y = rhs.get(j);
+
+			if( x == y ) {
+				++i;
+				++j;
+
+				novo.add(x);
+			} else if( x < y ) {
+				++i;
+				novo.add(x);
+			} else {
+				++j;
+			}
 		}
 
+		novo.ordenado = true;
 		return novo;
 	}
 
-	/* Obtém a negação de um conjunto
-	 * C = A - B
-	 */
-	Conjunto negacao(const Conjunto &c) const {
-		Conjunto novo { c.tamanho() };
-
-		for( unsigned i = 0; i < c.tamanho(); ++i ) {
-			novo.setChunk(i, ~c.getChunk(i));
-		}
-
-		return novo;
-	}
-
-	Conjunto operator&(const Conjunto &rhs) const {
+	Conjunto operator&(Conjunto &rhs) {
 		return this->interseccao(*this, rhs);
 	}
 
-	Conjunto operator|(const Conjunto &rhs) const {
+	Conjunto operator|(Conjunto &rhs) {
 		return this->uniao(*this, rhs);
-	}
-
-	Conjunto operator~(void) const {
-		return this->negacao(*this);
 	}
 };

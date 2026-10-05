@@ -10,6 +10,7 @@
 #pragma once
 
 #include <cstdlib>
+#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <numeric>
@@ -61,6 +62,9 @@ private:
 	std::vector<Cinema> cinemas;
 	std::vector<Cinema *> cinemas_cache;
 
+	Conjunto ind_filmes_nao_adultos;
+	Conjunto ind_filmes_adultos;
+
 	std::vector<Filme> lerFilmes(std::string caminho) {
 		std::ifstream arq(caminho);
 		if( !arq.is_open() ) {
@@ -75,6 +79,9 @@ private:
 		this->ano_inicial_max = leitor.ano_inicial_max;
 		this->ano_final_max = leitor.ano_final_max;
 		this->duracao_max = leitor.duracao_max;
+
+		this->ind_filmes_nao_adultos = leitor.ind_adulto[1];
+		this->ind_filmes_adultos = leitor.ind_adulto[1];
 
 		return filmes;
 	}
@@ -96,13 +103,11 @@ private:
 
 	void construirIndicesFilmes(void) {
 		std::cout << "  * Indice: titulo primario... " << std::flush;
-		this->ind_titulo_primario
-			= this->criarIndiceTitulo(compararPorTituloPrimario);
+		this->ind_titulo_primario = this->criarIndiceTitulo();
 		std::cout << "OK!" << std::endl;
 
 		std::cout << "  * Indice: titulo original... " << std::flush;
-		this->ind_titulo_original
-			= this->criarIndiceTitulo(compararPorTituloOriginal);
+		this->ind_titulo_original = this->criarIndiceTitulo();
 		std::cout << "OK!" << std::endl;
 
 		std::cout << "  * Indice: ano inicial... " << std::flush;
@@ -128,12 +133,12 @@ private:
 		std::cout << "    * OK!" << std::endl;
 	}
 
-	/* Cria um índice baseado em uma propriedade duma classe */
-	std::vector<unsigned> criarIndiceTitulo(ord_t f) {
+	/* Cria o índice de título */
+	std::vector<unsigned> criarIndiceTitulo(void) {
 		std::vector<unsigned> indices(this->filmes.size(), 0);
 		std::iota(std::begin(indices), std::end(indices), 0);
 
-		quicksort(indices, 0, indices.size() - 1, f);
+		quicksort(indices, 0, indices.size() - 1);
 
 		return indices;
 	}
@@ -207,35 +212,39 @@ private:
 	 * maioria, distintos, e essencialmente aleatórios (bom caso-de-uso para
 	 * o Quicksort)
 	 */
-	void quicksort(std::vector<unsigned> &v, int baixo, int alto, ord_t f) {
-		if( baixo >= alto || baixo < 0 ) {
-			return;
+	void quicksort(std::vector<unsigned> &v, int baixo, int alto) {
+		if( baixo >= 0 && alto >= 0 && baixo < alto ) {
+			unsigned p = partition(v, baixo, alto);
+			quicksort(v, baixo, p);
+			quicksort(v, p + 1, alto);
 		}
-
-		unsigned p = partition(v, baixo, alto, f);
-
-		quicksort(v, baixo, p - 1, f);
-		quicksort(v, p + 1, alto, f);
 	}
 
 	/* Particiona o array (para o Quicksort) */
-	int partition(std::vector<unsigned> &v, int baixo, int alto, ord_t f) {
+	int partition(std::vector<unsigned> &v, int baixo, int alto) {
 		unsigned pivo;
-		int i, j;
+		pivo = v[baixo];
 
-		/* TODO: utilizar outro esquema de escolha de pivô mais eficiente */
-		pivo = v[alto];
+		int i = baixo - 1;
+		int j = alto + 1;
 
-		i = baixo;
-		for( j = baixo; j < alto - 1; ++j ) {
-			if( f(this->filmes[v[j]], this->filmes[pivo]) ) {
-				std::swap(v[i], v[j]);
+		while( true ) {
+			do {
 				++i;
-			}
-		}
+			} while( this->filmes[v[i]].titulo_original
+				< this->filmes[pivo].titulo_original );
 
-		std::swap(v[i], v[alto]);
-		return i;
+			do {
+				--j;
+			} while( this->filmes[v[j]].titulo_original
+				> this->filmes[pivo].titulo_original );
+
+			if( i >= j ) {
+				return j;
+			}
+
+			std::swap(v[i], v[j]);
+		}
 	}
 
 	/* Ordena um vetor de inteiros utilizando o algoritmo Counting Sort
@@ -403,7 +412,10 @@ private:
 		case TipoConsulta::TITULO:
 			return this->consultarFilmePorTitulo(consulta->getStr());
 		case TipoConsulta::ADULTO:
-			break;
+			if( consulta->isAdulto() ) {
+				return this->ind_filmes_adultos;
+			}
+			return this->ind_filmes_nao_adultos;
 		case TipoConsulta::ANO:
 			break;
 		case TipoConsulta::ANO_FAIXA_INICIAL:
@@ -428,7 +440,8 @@ private:
 		}
 		case TipoConsulta::OP_NAO: {
 			Conjunto c = this->consultarFilme(consulta->getEsq());
-			return ~c;
+			/* TODO: implementar */
+			return c;
 		}
 		}
 
@@ -437,7 +450,7 @@ private:
 	}
 
 	Conjunto consultarFilmePorTitulo(const std::string &titulo) const {
-		Conjunto c(this->filmes.size());
+		Conjunto c;
 		unsigned l = 0, r = this->filmes.size() - 1;
 
 		/* Busca binária pelo título */
@@ -491,7 +504,7 @@ private:
 		 * */
 		unsigned ok = l;
 		do {
-			c.setBit(this->ind_titulo_original[ok++]);
+			c.add(this->ind_titulo_original[ok++]);
 		} while( ok < this->filmes.size()
 			&& this->filmes[this->ind_titulo_original[ok]].titulo_original
 				<= titulo );
@@ -500,7 +513,7 @@ private:
 	}
 
 	Conjunto consultarFilmePorGenero(const std::string &genero) const {
-		Conjunto c(this->filmes.size());
+		Conjunto c;
 
 		unsigned pos = 0;
 
@@ -516,14 +529,14 @@ private:
 
 		/* "Setamos" todos os índices do vetor de índices do gênero procurado */
 		for( unsigned indice : this->ind_genero[pos] ) {
-			c.setBit(indice);
+			c.add(indice);
 		}
 
 		return c;
 	}
 
 	Conjunto consultarFilmePorTipo(const std::string &tipo) const {
-		Conjunto c(this->filmes.size()); // cria o conjunto vazio
+		Conjunto c; // cria o conjunto vazio
 
 		unsigned pos = 0;
 
@@ -539,7 +552,7 @@ private:
 
 		/* "Setamos" todos os índices do vetor de índices do tipo procurado */
 		for( unsigned indice : this->ind_tipo[pos] ) {
-			c.setBit(indice);
+			c.add(indice);
 		}
 
 		return c;
@@ -563,8 +576,9 @@ private:
 			return a | b;
 		}
 		case TipoConsulta::OP_NAO: {
+			/* TODO: implementar */
 			Conjunto c = this->consultarCinema(consulta->getEsq());
-			return ~c;
+			return c;
 		}
 
 		default:
@@ -589,7 +603,7 @@ private:
 		}
 
 		for( unsigned indice : this->ind_genero_cinema[pos] ) {
-			c.setBit(indice);
+			c.add(indice);
 		}
 
 		return c;
@@ -612,7 +626,7 @@ private:
 
 		/* "Setamos" todos os índices do vetor de índices do tipo procurado */
 		for( unsigned indice : this->ind_tipo_cinema[pos] ) {
-			c.setBit(indice);
+			c.add(indice);
 		}
 
 		return c;
@@ -621,6 +635,10 @@ private:
 public:
 	std::vector<std::string> tipos;
 	std::vector<std::string> generos;
+
+	BancoDeDados() {
+		srand(time(NULL));
+	}
 
 	/* Lê os dados dos filmes e cinemas */
 	void lerDados(void) {
@@ -698,13 +716,12 @@ public:
 
 			const Conjunto conj = this->consultarFilme(consulta.raiz);
 
-			total = conj.setados();
+			total = conj.tamanho();
 			this->filmes_cache.resize(total);
 
-			for( i = j = 0; j < total; ++i ) {
-				if( conj.getBit(i) ) {
-					this->filmes_cache[j++] = &this->filmes[i];
-				}
+			j = 0;
+			for( unsigned x : conj.v ) {
+				this->filmes_cache[j++] = &this->filmes[x];
 			}
 		} else {
 			total = this->filmes_cache.size();
@@ -736,14 +753,12 @@ public:
 
 			const Conjunto conj = this->consultarCinema(consulta.raiz);
 
-			total = conj.setados();
-
+			total = conj.tamanho();
 			this->cinemas_cache.resize(total);
 
-			for( i = j = 0; j < total; ++i ) {
-				if( conj.getBit(i) ) {
-					this->cinemas_cache[j++] = &this->cinemas[i];
-				}
+			j = 0;
+			for( unsigned x : conj.v ) {
+				this->cinemas_cache[j++] = &this->cinemas[x];
 			}
 		} else {
 			total = this->cinemas_cache.size();
