@@ -11,7 +11,6 @@
 
 #include <cassert>
 #include <cstring>
-#include <iostream>
 #include <string>
 
 enum struct TipoConsulta {
@@ -176,8 +175,7 @@ public:
 			return "|:" + this->getEsq()->stringificar()
 				+ " |:" + this->getDir()->stringificar();
 		case TipoConsulta::OP_NAO:
-			return "~:" + this->getEsq()->stringificar()
-				+ " ~:" + this->getDir()->stringificar();
+			return "~:" + this->getEsq()->stringificar();
 		}
 
 		return "?";
@@ -187,7 +185,13 @@ public:
 /* A consulta em si */
 struct Consulta {
 private:
-	void adicionarNo(ConsultaNo *no) {
+	void adicionarNo(ConsultaNo *no, bool negar) {
+		if( negar ) {
+			ConsultaNo *op = new ConsultaNo(TipoConsulta::OP_NAO);
+			op->setDir(no);
+			no = op;
+		}
+
 		if( raiz == nullptr ) {
 			raiz = no;
 		} else {
@@ -224,44 +228,44 @@ public:
 	Consulta()
 		: raiz { nullptr } { }
 
-	void adicionarBuscaPorTitulo(const std::string titulo) {
+	void adicionarBuscaPorTitulo(const std::string titulo, bool negar) {
 		ConsultaNo *no = new ConsultaNo(TipoConsulta::TITULO, titulo);
-		this->adicionarNo(no);
+		this->adicionarNo(no, negar);
 	}
 
-	void adicionarBuscaPorAdulto(const bool adulto) {
+	void adicionarBuscaPorAdulto(const bool adulto, bool negar) {
 		ConsultaNo *no = new ConsultaNo(TipoConsulta::ADULTO, adulto);
-		this->adicionarNo(no);
+		this->adicionarNo(no, negar);
 	}
 
-	void adicionarBuscaPorAno(const unsigned ano) {
+	void adicionarBuscaPorAno(const unsigned ano, bool negar) {
 		ConsultaNo *no = new ConsultaNo(TipoConsulta::ANO, ano);
-		this->adicionarNo(no);
+		this->adicionarNo(no, negar);
 	}
 
-	void adicionarBuscaPorFaixaAnoInicial(const unsigned ano) {
+	void adicionarBuscaPorFaixaAnoInicial(const unsigned ano, bool negar) {
 		ConsultaNo *no = new ConsultaNo(TipoConsulta::ANO_FAIXA_INICIAL, ano);
-		this->adicionarNo(no);
+		this->adicionarNo(no, negar);
 	}
 
-	void adicionarBuscaPorFaixaAnoFinal(const unsigned ano) {
+	void adicionarBuscaPorFaixaAnoFinal(const unsigned ano, bool negar) {
 		ConsultaNo *no = new ConsultaNo(TipoConsulta::ANO_FAIXA_FINAL, ano);
-		this->adicionarNo(no);
+		this->adicionarNo(no, negar);
 	}
 
-	void adicionarBuscaPorDuracao(const unsigned duracao) {
+	void adicionarBuscaPorDuracao(const unsigned duracao, bool negar) {
 		ConsultaNo *no = new ConsultaNo(TipoConsulta::DURACAO, duracao);
-		this->adicionarNo(no);
+		this->adicionarNo(no, negar);
 	}
 
-	void adicionarBuscaPorGenero(const std::string genero) {
+	void adicionarBuscaPorGenero(const std::string genero, bool negar) {
 		ConsultaNo *no = new ConsultaNo(TipoConsulta::GENERO, genero);
-		this->adicionarNo(no);
+		this->adicionarNo(no, negar);
 	}
 
-	void adicionarBuscaPorTipo(const std::string tipo) {
+	void adicionarBuscaPorTipo(const std::string tipo, bool negar) {
 		ConsultaNo *no = new ConsultaNo(TipoConsulta::TIPO, tipo);
-		this->adicionarNo(no);
+		this->adicionarNo(no, negar);
 	}
 
 	void adicionarOperadorE(void) {

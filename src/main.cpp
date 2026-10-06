@@ -86,7 +86,6 @@ void cmdBuscarFilme(BancoDeDados &bd) {
 		std::cout << "# OPERADOR" << std::endl;
 		std::cout << "  1 E ..... (AND)" << std::endl;
 		std::cout << "  2 OU .... (OR)" << std::endl;
-		std::cout << "  3 NAO ... (NOT)" << std::endl;
 		std::cout << "  0 Finalizar filtro e pesquisar" << std::endl;
 		std::cout << "  > " << std::flush;
 		std::cin >> cmd;
@@ -97,9 +96,6 @@ void cmdBuscarFilme(BancoDeDados &bd) {
 			break;
 		case 2:
 			consulta.adicionarOperadorOu();
-			break;
-		case 3:
-			consulta.adicionarOperadorNao();
 			break;
 		case 0:
 			rodando = false;
@@ -117,10 +113,15 @@ void cmdBuscarFilme(BancoDeDados &bd) {
 }
 
 bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
+	bool negar = false;
 	while( true ) {
 		unsigned cmd;
 
-		std::cout << "# ADICIONANDO FILTROS" << std::endl;
+		if( negar ) {
+			std::cout << "# NEGANDO FILTRO" << std::endl;
+		} else {
+			std::cout << "# ADICIONANDO FILTROS" << std::endl;
+		}
 		std::cout << "  1 Adicionar filtro 'titulo'" << std::endl;
 		std::cout << "  2 Adicionar filtro 'adulto'" << std::endl;
 		std::cout << "  3 Adicionar filtro 'ano'" << std::endl;
@@ -129,6 +130,11 @@ bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
 		std::cout << "  6 Adicionar filtro 'duracao'" << std::endl;
 		std::cout << "  7 Adicionar filtro 'genero'" << std::endl;
 		std::cout << "  8 Adicionar filtro 'tipo'" << std::endl;
+		if( negar ) {
+			std::cout << "  9 Filtro normal (nao negar)" << std::endl;
+		} else {
+			std::cout << "  9 Negar filtro (NAO)" << std::endl;
+		}
 		std::cout << "  0 Cancelar" << std::endl;
 		std::cout << "  > " << std::flush;
 		std::cin >> cmd;
@@ -141,7 +147,7 @@ bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
 			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 			std::getline(std::cin, titulo);
 
-			consulta.adicionarBuscaPorTitulo(titulo);
+			consulta.adicionarBuscaPorTitulo(titulo, negar);
 		} break;
 		case 2: {
 			unsigned adulto;
@@ -149,7 +155,7 @@ bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
 			std::cout << "  > " << std::flush;
 			std::cin >> adulto;
 
-			consulta.adicionarBuscaPorAdulto(adulto == 1);
+			consulta.adicionarBuscaPorAdulto(adulto == 1, negar);
 		} break;
 		case 3:
 			std::cout << "NAO IMPLEMENTADO" << std::endl;
@@ -173,7 +179,7 @@ bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
 			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 			std::getline(std::cin, genero);
 
-			consulta.adicionarBuscaPorGenero(genero);
+			consulta.adicionarBuscaPorGenero(genero, negar);
 		} break;
 		case 8: {
 			std::string tipo;
@@ -186,8 +192,11 @@ bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
 			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 			std::getline(std::cin, tipo);
 
-			consulta.adicionarBuscaPorTipo(tipo);
+			consulta.adicionarBuscaPorTipo(tipo, negar);
 		} break;
+		case 9:
+			negar = not negar;
+			continue;
 		case 0:
 			return false;
 		default:
@@ -264,7 +273,6 @@ void cmdBuscarCinema(BancoDeDados &bd) {
 		std::cout << "# OPERADOR" << std::endl;
 		std::cout << "  1 E ..... (AND)" << std::endl;
 		std::cout << "  2 OU .... (OR)" << std::endl;
-		std::cout << "  3 NAO ... (NOT)" << std::endl;
 		std::cout << "  0 Finalizar filtro e pesquisar" << std::endl;
 		std::cout << "  > " << std::flush;
 		std::cin >> cmd;
@@ -275,9 +283,6 @@ void cmdBuscarCinema(BancoDeDados &bd) {
 			break;
 		case 2:
 			consulta.adicionarOperadorOu();
-			break;
-		case 3:
-			consulta.adicionarOperadorNao();
 			break;
 		case 0:
 			rodando = false;
@@ -296,43 +301,63 @@ void cmdBuscarCinema(BancoDeDados &bd) {
 
 bool cmdBuscarCinemaAdicionarFiltro(
 	const BancoDeDados &bd, Consulta &consulta) {
-	unsigned cmd;
+	bool negar = false;
+	while( true ) {
+		unsigned cmd;
 
-	std::cout << "# ADICIONANDO FILTROS" << std::endl;
-	std::cout << "  1 Adicionar filtro 'genero'" << std::endl;
-	std::cout << "  2 Adicionar filtro 'tipo'" << std::endl;
-	std::cout << "  0 Cancelar" << std::endl;
-	std::cout << "  > " << std::flush;
-	std::cin >> cmd;
-
-	switch( cmd ) {
-	case 1: {
-		std::string genero;
-		std::cout << "+ FILTRAR por 'GENERO' (digite genero)" << std::endl;
-		imprimirGeneros(bd);
-		std::cout << std::endl;
+		if( negar ) {
+			std::cout << "# NEGANDO FILTRO" << std::endl;
+		} else {
+			std::cout << "# ADICIONANDO FILTROS" << std::endl;
+		}
+		std::cout << "  1 Adicionar filtro 'genero'" << std::endl;
+		std::cout << "  2 Adicionar filtro 'tipo'" << std::endl;
+		if( negar ) {
+			std::cout << "  9 Filtro normal (nao negar)" << std::endl;
+		} else {
+			std::cout << "  9 Negar filtro (NAO)" << std::endl;
+		}
+		std::cout << "  0 Cancelar" << std::endl;
 		std::cout << "  > " << std::flush;
-		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		std::getline(std::cin, genero);
+		std::cin >> cmd;
 
-		consulta.adicionarBuscaPorGenero(genero);
-	} break;
-	case 2: {
-		std::string tipo;
-		std::cout << "+ FILTRAR por 'TIPO' (digite tipo)" << std::endl;
-		imprimirTipos(bd);
-		std::cout << std::endl;
-		std::cout << "  > " << std::flush;
-		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		std::getline(std::cin, tipo);
+		switch( cmd ) {
+		case 1: {
+			std::string genero;
+			std::cout << "+ FILTRAR por 'GENERO' (digite genero)" << std::endl;
+			imprimirGeneros(bd);
+			std::cout << std::endl;
+			std::cout << "  > " << std::flush;
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+			std::getline(std::cin, genero);
 
-		consulta.adicionarBuscaPorTipo(tipo);
-	} break;
-	case 0:
-		return false;
+			consulta.adicionarBuscaPorGenero(genero, negar);
+		} break;
+		case 2: {
+			std::string tipo;
+
+			std::cout << "+ FILTRAR por 'TIPO' (digite tipo)" << std::endl;
+			imprimirTipos(bd);
+
+			std::cout << std::endl;
+			std::cout << "  > " << std::flush;
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+			std::getline(std::cin, tipo);
+
+			consulta.adicionarBuscaPorTipo(tipo, negar);
+		} break;
+		case 9:
+			negar = not negar;
+			continue;
+		case 0:
+			return false;
+		default:
+			std::cout << "Comando invalido, tente novamente:" << std::endl;
+			continue;
+		}
+
+		return true;
 	}
-
-	return true;
 }
 
 void cmdPaginarConsultaCinema(BancoDeDados &bd, const Consulta &consulta) {

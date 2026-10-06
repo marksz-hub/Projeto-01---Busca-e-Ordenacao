@@ -10,6 +10,8 @@
 #pragma once
 
 #include <algorithm>
+#include <iostream>
+#include <numeric>
 #include <vector>
 
 struct Conjunto {
@@ -22,15 +24,31 @@ public:
 
 	Conjunto()
 		: k { 0 }
-		, ordenado { false } { }
+		, ordenado { true } { }
 
 	Conjunto(unsigned n)
 		: k { 0 }
-		, ordenado { false }
+		, ordenado { true }
 		, v(n, 0) { }
 
 	unsigned tamanho(void) const {
 		return this->v.size();
+	}
+
+	void print(void) const {
+		std::cout << "{ ";
+		for( unsigned x : this->v ) {
+			std::cout << x << " ";
+		}
+		std::cout << "}" << std::endl;
+	}
+
+	void preencher(unsigned n) {
+		this->v.resize(n);
+		std::iota(std::begin(this->v), std::end(this->v), 0);
+
+		this->k = n - 1;
+		this->ordenado = true;
 	}
 
 	void add(unsigned v) {
@@ -89,6 +107,8 @@ public:
 			const unsigned y = rhs.get(j);
 			if( x == y ) {
 				novo.add(x);
+				++i;
+				++j;
 			} else if( x < y ) {
 				++i;
 			} else {
@@ -124,7 +144,50 @@ public:
 				novo.add(x);
 			} else {
 				++j;
+				novo.add(y);
 			}
+		}
+
+		while( i < lhs.tamanho() ) {
+			novo.add(lhs.get(i++));
+		}
+
+		while( j < rhs.tamanho() ) {
+			novo.add(rhs.get(j++));
+		}
+
+		novo.ordenado = true;
+		return novo;
+	}
+
+	/* Obtém a diferença entre dois conjuntos
+	 * C = A - B
+	 */
+	Conjunto diferenca(Conjunto &lhs, Conjunto &rhs) {
+		Conjunto novo;
+		unsigned i = 0, j = 0;
+
+		lhs.ordenar();
+		rhs.ordenar();
+
+		while( i < lhs.tamanho() && j < rhs.tamanho() ) {
+			const unsigned x = lhs.get(i);
+			const unsigned y = rhs.get(j);
+
+			if( x == y ) {
+				++i;
+				++j;
+			} else if( x < y ) {
+				++i;
+				novo.add(x);
+			} else {
+				++j;
+				novo.add(y);
+			}
+		}
+
+		while( i < lhs.tamanho() ) {
+			novo.add(lhs.get(i++));
 		}
 
 		novo.ordenado = true;
@@ -137,5 +200,9 @@ public:
 
 	Conjunto operator|(Conjunto &rhs) {
 		return this->uniao(*this, rhs);
+	}
+
+	Conjunto operator-(Conjunto &rhs) {
+		return this->diferenca(*this, rhs);
 	}
 };

@@ -135,7 +135,7 @@ private:
 
 	/* Cria o índice de título */
 	std::vector<unsigned> criarIndiceTitulo(void) {
-		std::vector<unsigned> indices(this->filmes.size(), 0);
+		std::vector<unsigned> indices(this->filmes.size());
 		std::iota(std::begin(indices), std::end(indices), 0);
 
 		quicksort(indices, 0, indices.size() - 1);
@@ -432,9 +432,11 @@ private:
 			return a | b;
 		}
 		case TipoConsulta::OP_NAO: {
-			Conjunto c = this->consultarFilme(consulta->getEsq());
-			/* TODO: implementar */
-			return c;
+			Conjunto a;
+			Conjunto b = this->consultarFilme(consulta->getDir());
+
+			a.preencher(this->filmes.size());
+			return a - b;
 		}
 		}
 
@@ -569,9 +571,11 @@ private:
 			return a | b;
 		}
 		case TipoConsulta::OP_NAO: {
-			/* TODO: implementar */
-			Conjunto c = this->consultarCinema(consulta->getEsq());
-			return c;
+			Conjunto a;
+			Conjunto b = this->consultarFilme(consulta->getDir());
+
+			a.preencher(this->filmes.size());
+			return a - b;
 		}
 
 		default:
@@ -694,6 +698,11 @@ public:
 			std::cout << ")" << std::endl;
 			break;
 		case TipoConsulta::OP_NAO:
+			std::cout << "(NAO:" << std::endl;
+			std::cout << "  ";
+			this->printConsulta(no->getDir());
+
+			std::cout << ")" << std::endl;
 			break;
 		}
 	}
@@ -704,6 +713,7 @@ public:
 		std::vector<Filme *> resultado { FILMES_POR_PAGINA };
 		unsigned limite, i, j;
 
+		this->printConsulta(consulta.raiz);
 		if( !this->cache || this->cache != consulta ) {
 			this->cache = consulta;
 

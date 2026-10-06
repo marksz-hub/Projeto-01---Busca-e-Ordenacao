@@ -25,6 +25,7 @@ struct Filme {
 	std::vector<std::string> generos;
 
 	friend std::ostream &operator<<(std::ostream &strm, const Filme &f) {
-		return strm << f.id + " | " + f.titulo_original;
+		std::string s = f.id + " | " + f.titulo_original + " (" + f.tipo + ")";
+		return strm << s;
 	}
 };
