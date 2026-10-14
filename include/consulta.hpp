@@ -13,6 +13,8 @@
 #include <cstring>
 #include <string>
 
+#include "quadtree.hpp"
+
 enum struct TipoConsulta {
 	TITULO,
 	ADULTO,
@@ -22,6 +24,8 @@ enum struct TipoConsulta {
 	DURACAO,
 	GENERO,
 	TIPO,
+	LOCALIZACAO,
+	PRECO,
 	OP_E,
 	OP_OU,
 	OP_NAO,
@@ -44,11 +48,17 @@ union ConsultaDado {
 	 */
 	unsigned num;
 
+	/* Para: TipoConsulta::PRECO */
+	double preco;
+
 	/* Para: TipoConsulta::OP_* */
 	struct {
 		ConsultaNo *esq;
 		ConsultaNo *dir;
 	} filho;
+
+	/* Para: TipoConsulta::OP_LOCALIZACAO */
+	Loc loc;
 };
 
 /* 'tagged union' com a consulta */
@@ -82,6 +92,16 @@ public:
 	ConsultaNo(TipoConsulta tipo, unsigned num) {
 		this->tipo = tipo;
 		this->dado.num = num;
+	}
+
+	ConsultaNo(TipoConsulta tipo, double preco) {
+		this->tipo = tipo;
+		this->dado.preco = preco;
+	}
+
+	ConsultaNo(Loc loc) {
+		this->tipo = TipoConsulta::LOCALIZACAO;
+		this->dado.loc = loc;
 	}
 
 	~ConsultaNo(void) {
@@ -118,8 +138,19 @@ public:
 	unsigned getNum(void) const {
 		assert(tipo == TipoConsulta::ANO
 			|| tipo == TipoConsulta::ANO_FAIXA_INICIAL
-			|| tipo == TipoConsulta::ANO_FAIXA_FINAL || TipoConsulta::DURACAO);
+			|| tipo == TipoConsulta::ANO_FAIXA_FINAL
+			|| tipo == TipoConsulta::DURACAO);
 		return this->dado.num;
+	}
+
+	double getPreco(void) const {
+		assert(tipo == TipoConsulta::PRECO);
+		return this->dado.preco;
+	}
+
+	Loc getLoc(void) const {
+		assert(tipo == TipoConsulta::LOCALIZACAO);
+		return this->dado.loc;
 	}
 
 	ConsultaNo *getEsq(void) const {
@@ -166,8 +197,17 @@ public:
 			return "d:" + std::to_string(this->getNum());
 		case TipoConsulta::GENERO:
 			return "g:" + this->getStr();
+		case TipoConsulta::PRECO:
+			return "p:" + std::to_string(this->getPreco());
 		case TipoConsulta::TIPO:
 			return "T:" + this->getStr();
+		case TipoConsulta::LOCALIZACAO: {
+			const Loc &loc = this->getLoc();
+			std::string x = std::to_string(loc.x);
+			std::string y = std::to_string(loc.y);
+			std::string raio = std::to_string(loc.raio);
+			return "L:" + x + " " + y + " " + raio;
+		}
 		case TipoConsulta::OP_E:
 			return "&:" + this->getEsq()->stringificar()
 				+ " &:" + this->getDir()->stringificar();
@@ -265,6 +305,16 @@ public:
 
 	void adicionarBuscaPorTipo(const std::string tipo, bool negar) {
 		ConsultaNo *no = new ConsultaNo(TipoConsulta::TIPO, tipo);
+		this->adicionarNo(no, negar);
+	}
+
+	void adicionarBuscaPorPreco(const double preco, bool negar) {
+		ConsultaNo *no = new ConsultaNo(TipoConsulta::PRECO, preco);
+		this->adicionarNo(no, negar);
+	}
+
+	void adicionarBuscaPorLocalizacao(const Loc loc, bool negar) {
+		ConsultaNo *no = new ConsultaNo(loc);
 		this->adicionarNo(no, negar);
 	}
 

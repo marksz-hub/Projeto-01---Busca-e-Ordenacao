@@ -28,6 +28,10 @@ void cmdPaginarConsultaCinema(BancoDeDados &bd, const Consulta &consulta);
 void imprimirGeneros(const BancoDeDados &bd);
 void imprimirTipos(const BancoDeDados &bd);
 
+void cmdDesenharMapaDeCinemas(const BancoDeDados &bd);
+
+void limparTela(void);
+
 int main() {
 	BancoDeDados bd {};
 
@@ -48,6 +52,7 @@ int main() {
 		std::cout << "# COMANDOS" << std::endl;
 		std::cout << "  1 Buscar filme" << std::endl;
 		std::cout << "  2 Buscar cinema" << std::endl;
+		std::cout << "  3 Mapa de cinemas" << std::endl;
 		std::cout << "  0 Sair" << std::endl;
 		std::cout << "  > " << std::flush;
 
@@ -60,6 +65,9 @@ int main() {
 			break;
 		case 2:
 			cmdBuscarCinema(bd);
+			break;
+		case 3:
+			cmdDesenharMapaDeCinemas(bd);
 			break;
 		case 0:
 			rodando = false;
@@ -312,6 +320,8 @@ bool cmdBuscarCinemaAdicionarFiltro(
 		}
 		std::cout << "  1 Adicionar filtro 'genero'" << std::endl;
 		std::cout << "  2 Adicionar filtro 'tipo'" << std::endl;
+		std::cout << "  3 Adicionar filtro 'preco'" << std::endl;
+		std::cout << "  4 Adicionar filtro 'localizacao'" << std::endl;
 		if( negar ) {
 			std::cout << "  9 Filtro normal (nao negar)" << std::endl;
 		} else {
@@ -345,6 +355,30 @@ bool cmdBuscarCinemaAdicionarFiltro(
 			std::getline(std::cin, tipo);
 
 			consulta.adicionarBuscaPorTipo(tipo, negar);
+		} break;
+		case 3: {
+			double preco;
+
+			std::cout << "+ FILTRAR por 'PRECO' (digite preco maximo)"
+					  << std::endl;
+			std::cout << "> R$" << std::flush;
+			std::cin >> preco;
+
+			consulta.adicionarBuscaPorPreco(preco, negar);
+		} break;
+		case 4: {
+			Loc loc;
+
+			std::cout << "+ FILTRAR por 'LOCALIZACAO'" << std::endl;
+			std::cout << "  1 Coordenada X: " << std::endl;
+			std::cin >> loc.x;
+			std::cout << "  2 Coordenada Y: " << std::endl;
+			std::cin >> loc.y;
+			std::cout << "  3 Raio da busca: " << std::endl;
+			std::cin >> loc.raio;
+
+			consulta.adicionarBuscaPorLocalizacao(loc, negar);
+
 		} break;
 		case 9:
 			negar = not negar;
@@ -435,4 +469,70 @@ void imprimirTipos(const BancoDeDados &bd) {
 			std::cout << "  " << std::flush;
 		}
 	}
+}
+
+void cmdDesenharMapaDeCinemas(const BancoDeDados &bd) {
+	unsigned x = 0, y = 0, zoom = 0;
+
+	bool rodando = true;
+	while( rodando ) {
+		unsigned cmd;
+
+		bd.desenharMapaDeCinemas(x, y, zoom);
+
+		std::cout << "# NAVEGACAO:" << std::endl;
+		std::cout << "  1 Mover pra esquerda" << std::endl;
+		std::cout << "  2 Mover pra direita" << std::endl;
+		std::cout << "  3 Mover pra cima" << std::endl;
+		std::cout << "  4 Mover pra baixo" << std::endl;
+		std::cout << "  5 Mais zoom" << std::endl;
+		std::cout << "  6 Menos zoom" << std::endl;
+		std::cout << "  0 Sair" << std::endl;
+		std::cout << "  > " << std::flush;
+		std::cin >> cmd;
+
+		switch( cmd ) {
+		case 1:
+			if( x > 0 ) {
+				--x;
+			}
+			break;
+		case 2:
+			if( x < zoom ) {
+				++x;
+			}
+			break;
+		case 3:
+			if( y > 0 ) {
+				--y;
+			}
+			break;
+		case 4:
+			if( y < zoom ) {
+				++y;
+			}
+			break;
+		case 5:
+			if( zoom < 7 ) {
+				++zoom;
+			}
+			break;
+		case 6:
+			if( zoom > 0 ) {
+				--zoom;
+				x = std::min(x, zoom - 1);
+				y = std::min(y, zoom - 1);
+			}
+			break;
+		case 0:
+			rodando = false;
+			break;
+		}
+	}
+
+	std::cout << std::endl;
+}
+
+void limparTela(void) {
+	std::cout << "\x1B[2J\x1B[H";
 }

@@ -16,14 +16,12 @@
 struct Cinema {
 	std::string id;
 	std::string nome_do_cinema;
-	int x;
-	int y;
+	unsigned x;
+	unsigned y;
 	double preco_ingresso;
 	std::vector<std::string> filmes_em_exibicao;
 
 	friend std::ostream &operator<<(std::ostream &strm, const Cinema &c) {
-        return strm << c.id << " | " << c.nome_do_cinema;
-    }
+		return strm << c.id << " | " << c.nome_do_cinema;
+	}
 };
-
-

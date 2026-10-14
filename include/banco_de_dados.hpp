@@ -42,9 +42,14 @@ private:
 	std::vector<Filme> filmes;
 	std::vector<Filme *> filmes_cache;
 
+	Quadtree quadtree;
+
 	unsigned ano_inicial_max;
 	unsigned ano_final_max;
 	unsigned duracao_max;
+
+	unsigned cinema_x_min, cinema_y_min;
+	unsigned cinema_x_max, cinema_y_max;
 
 	std::vector<unsigned> ind_titulo_primario;
 	std::vector<unsigned> ind_titulo_original;
@@ -97,6 +102,12 @@ private:
 
 		LeitorCinema leitor { caminho };
 		std::vector<Cinema> cinemas = leitor.ler();
+
+		this->cinema_x_min = leitor.x_min;
+		this->cinema_y_min = leitor.y_min;
+
+		this->cinema_x_max = leitor.x_max;
+		this->cinema_y_max = leitor.y_max;
 
 		return cinemas;
 	}
@@ -284,6 +295,10 @@ private:
 		std::cout << "  * Indice: genero... " << std::endl;
 		this->criarIndiceGeneroCinema();
 		std::cout << "    * OK!" << std::endl;
+
+		std::cout << "  * Indice: localizacao... " << std::flush;
+		this->criarIndiceLocalizacaoCinema();
+		std::cout << "OK!" << std::endl;
 	}
 
 	unsigned encontrarFilme(const std::string &id) const {
@@ -388,6 +403,21 @@ private:
 		}
 	}
 
+	void criarIndiceLocalizacaoCinema(void) {
+		this->cinema_x_max -= this->cinema_x_min;
+		this->cinema_y_max -= this->cinema_y_min;
+
+		this->quadtree.atualizarLimites(this->cinema_x_max, this->cinema_y_max);
+
+		for( unsigned i = 0; i < this->cinemas.size(); ++i ) {
+			Cinema &c = this->cinemas[i];
+			c.x -= this->cinema_x_min;
+			c.y -= this->cinema_y_min;
+
+			this->quadtree.inserir(c.x, c.y, i);
+		}
+	}
+
 	static unsigned obterAnoInicial(Filme &f) {
 		return f.ano_inicial;
 	}
@@ -417,10 +447,14 @@ private:
 			break;
 		case TipoConsulta::DURACAO:
 			break;
+		case TipoConsulta::PRECO:
+			break;
 		case TipoConsulta::GENERO:
 			return this->consultarFilmePorGenero(consulta->getStr());
 		case TipoConsulta::TIPO:
 			return this->consultarFilmePorTipo(consulta->getStr());
+		case TipoConsulta::LOCALIZACAO:
+			break;
 		case TipoConsulta::OP_E: {
 			Conjunto a = this->consultarFilme(consulta->getEsq());
 			Conjunto b = this->consultarFilme(consulta->getDir());
@@ -444,6 +478,35 @@ private:
 		std::exit(EXIT_FAILURE);
 	}
 
+	bool subExiste(
+		const std::string &needle, const std::string &haystack) const {
+		unsigned i, j;
+		if( haystack.size() < needle.size() ) {
+			return false;
+		}
+
+		for( i = 0; i < haystack.size(); ++i ) {
+			if( haystack[i] != needle[0] ) {
+				continue;
+			}
+
+			bool ok = true;
+			unsigned k = i + 1;
+			for( j = 1; k < haystack.size() && j < needle.size(); ++k, ++j ) {
+				if( haystack[k] != needle[j] ) {
+					ok = false;
+					break;
+				}
+			}
+
+			if( ok ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	Conjunto consultarFilmePorTitulo(const std::string &titulo) const {
 		Conjunto c;
 		unsigned esq = 0, dir = this->filmes.size() - 1;
@@ -465,8 +528,9 @@ private:
 		 * Sai da função
 		 */
 		if( esq >= this->filmes.size()
-			|| this->filmes[this->ind_titulo_original[esq]].titulo_original
-				!= titulo ) {
+			|| !this->subExiste(titulo,
+				this->filmes[this->ind_titulo_original[esq]]
+					.titulo_original) ) {
 			/* TODO: alguma forma de dizer 'ei, não achamos nada.'
 			 * Ou talvez só retornar o set vazio já seja suficiente...
 			 */
@@ -501,8 +565,8 @@ private:
 		do {
 			c.add(this->ind_titulo_original[ok++]);
 		} while( ok < this->filmes.size()
-			&& this->filmes[this->ind_titulo_original[ok]].titulo_original
-				<= titulo );
+			&& this->subExiste(titulo,
+				this->filmes[this->ind_titulo_original[ok]].titulo_original) );
 
 		return c;
 	}
@@ -559,7 +623,8 @@ private:
 			return this->consultarCinemaPorGenero(consulta->getStr());
 		case TipoConsulta::TIPO:
 			return this->consultarCinemaPorTipo(consulta->getStr());
-
+		case TipoConsulta::LOCALIZACAO:
+			return this->consultarCinemaPorLocalizacao(consulta->getLoc());
 		case TipoConsulta::OP_E: {
 			Conjunto a = this->consultarCinema(consulta->getEsq());
 			Conjunto b = this->consultarCinema(consulta->getDir());
@@ -586,6 +651,7 @@ private:
 		std::exit(EXIT_FAILURE);
 	}
 
+	/* Busca cinemas que possuem filmes de um gênero específico em cartaz */
 	Conjunto consultarCinemaPorGenero(const std::string &genero) const {
 		Conjunto c;
 
@@ -606,6 +672,7 @@ private:
 		return c;
 	}
 
+	/* Busca cinemas que possuem filmes de um tipo específico em cartaz */
 	Conjunto consultarCinemaPorTipo(const std::string &tipo) const {
 		Conjunto c; // cria o conjunto vazio
 
@@ -629,11 +696,31 @@ private:
 		return c;
 	}
 
+	/* Busca cinemas que possuem ingressos abaixo de um valor */
+	Conjunto consultarCinemaPorPreco(double preco) const {
+		Conjunto c;
+
+		return c;
+	}
+
+	/* Busca cinemas que possuem filmes proximos específico em cartaz */
+	Conjunto consultarCinemaPorLocalizacao(const Loc loc) const {
+		Conjunto c;
+
+		const std::vector<unsigned> pontos = this->quadtree.buscar(loc);
+		for( const unsigned ind : pontos ) {
+			c.add(ind);
+		}
+
+		return c;
+	}
+
 public:
 	std::vector<std::string> tipos;
 	std::vector<std::string> generos;
 
-	BancoDeDados() {
+	BancoDeDados()
+		: quadtree(4) {
 		srand(time(NULL));
 	}
 
@@ -663,13 +750,14 @@ public:
 			std::cout << "(ADULTO: " << no->isAdulto() << ")" << std::endl;
 			break;
 		case TipoConsulta::ANO:
-			std::cout << "(ANO:    " << no->getNum() << ")" << std::endl;
+			std::cout << "(ANO: " << no->getNum() << ")" << std::endl;
 			break;
 		case TipoConsulta::ANO_FAIXA_INICIAL:
 			break;
 		case TipoConsulta::ANO_FAIXA_FINAL:
 			break;
 		case TipoConsulta::DURACAO:
+			std::cout << "(DURACAO: " << no->getNum() << ")" << std::endl;
 			break;
 		case TipoConsulta::GENERO:
 			std::cout << "(GENERO: " << no->getStr() << ")" << std::endl;
@@ -677,6 +765,14 @@ public:
 		case TipoConsulta::TIPO:
 			std::cout << "(TIPO: " << no->getStr() << ")" << std::endl;
 			break;
+		case TipoConsulta::PRECO:
+			std::cout << "(PRECO: " << no->getPreco() << ")" << std::endl;
+			break;
+		case TipoConsulta::LOCALIZACAO: {
+			const Loc &loc = no->getLoc();
+			std::cout << "(TIPO: " << loc.x << " " << loc.y << " " << loc.raio
+					  << ")" << std::endl;
+		} break;
 		case TipoConsulta::OP_E:
 			std::cout << "(E:" << std::endl;
 
@@ -781,5 +877,44 @@ public:
 
 	unsigned getCinemasPorPagina(void) const {
 		return this->CINEMAS_POR_PAGINA;
+	}
+
+	/* Desenha o mapa de cinemas */
+	void desenharMapaDeCinemas(unsigned &x, unsigned &y, unsigned &zoom) const {
+		const unsigned SZ = 32;
+		std::vector<std::vector<char>> mapa(SZ, std::vector<char>(SZ, '.'));
+
+		const unsigned W = this->cinema_x_max >> zoom;
+		const unsigned H = this->cinema_y_max >> zoom;
+		const unsigned X = x * W;
+		const unsigned Y = y * H;
+
+		Rect r = Rect { X, Y, W, H };
+		std::vector<unsigned> pontos = this->quadtree.buscar(r);
+
+		for( const unsigned ind : pontos ) {
+			const Cinema &c = this->cinemas[ind];
+			const unsigned x = c.x;
+			const unsigned y = c.y;
+
+			const unsigned ix = ((double)(SZ - 1) / W) * (x - X);
+			const unsigned iy = ((double)(SZ - 1) / H) * (y - Y);
+			mapa[iy][ix] = '*';
+		}
+
+		/* Nosso "cursor" */
+		mapa[SZ / 2][SZ / 2] = 'O';
+		for( std::vector<char> &v : mapa ) {
+			for( char c : v ) {
+				std::cout << c << " ";
+			}
+			std::cout << std::endl;
+		}
+
+		std::cout << "- - -" << std::endl;
+		std::cout << "X: " << X << " | Y: " << Y << " | Zoom: " << (zoom + 1)
+				  << "x (de 8x)" << std::endl;
+		std::cout << "Recorte: (" << X << ", " << Y << ") .. (" << X + W << ", "
+				  << Y + H << ")" << std::endl;
 	}
 };

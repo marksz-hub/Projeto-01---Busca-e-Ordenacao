@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <vector>
 
@@ -124,6 +125,9 @@ private:
 	std::string caminho;
 
 public:
+	unsigned x_min, y_min;
+	unsigned x_max, y_max;
+
 	LeitorCinema(std::string caminho) {
 		this->caminho = caminho;
 	};
@@ -137,6 +141,9 @@ public:
 		}
 
 		std::vector<Cinema> cinemas;
+
+		this->x_min = this->y_min = std::numeric_limits<unsigned>::max();
+		this->x_max = this->y_max = 0;
 
 		/* Pula a primeira linha */
 		arq.ignore(1024, '\n');
@@ -152,11 +159,18 @@ public:
 			cinema.nome_do_cinema = buf;
 
 			/* Lê as coordenadas e converte seus valores de string para inteiro
+			 * (sem sinal)
 			 */
 			std::getline(arq, buf, ',');
 			cinema.x = std::stoi(buf);
 			std::getline(arq, buf, ',');
 			cinema.y = std::stoi(buf);
+
+			this->x_min = std::min(cinema.x, this->x_min);
+			this->y_min = std::min(cinema.y, this->y_min);
+
+			this->x_max = std::max(cinema.x, this->x_max);
+			this->y_max = std::max(cinema.y, this->y_max);
 
 			/* Lê o preço e converte seu valor de string para double */
 			std::getline(arq, buf, ',');
