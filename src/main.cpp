@@ -165,18 +165,38 @@ bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
 
 			consulta.adicionarBuscaPorAdulto(adulto == 1, negar);
 		} break;
-		case 3:
-			std::cout << "NAO IMPLEMENTADO" << std::endl;
-			continue;
-		case 4:
-			std::cout << "NAO IMPLEMENTADO" << std::endl;
-			continue;
-		case 5:
-			std::cout << "NAO IMPLEMENTADO" << std::endl;
-			continue;
-		case 6:
-			std::cout << "NAO IMPLEMENTADO" << std::endl;
-			continue;
+		case 3: {
+		    unsigned ano;
+		    std::cout << "+ FILTRAR por 'ANO' (ano exato)" << std::endl;
+		    std::cout << "  > " << std::flush;
+		    std::cin >> ano;
+		
+		    consulta.adicionarBuscaPorAno(ano, negar);
+		} break;
+		case 4: {
+		    unsigned ano;
+		    std::cout << "+ FILTRAR por 'A PARTIR DO ANO'" << std::endl;
+		    std::cout << "  > " << std::flush;
+		    std::cin >> ano;
+		
+		    consulta.adicionarBuscaPorFaixaAnoInicial(ano, negar);
+		} break;
+		case 5: {
+		    unsigned ano;
+		    std::cout << "+ FILTRAR por 'ATE O ANO'" << std::endl;
+		    std::cout << "  > " << std::flush;
+		    std::cin >> ano;
+		
+		    consulta.adicionarBuscaPorFaixaAnoFinal(ano, negar);
+		} break;
+		case 6: {
+		    unsigned duracao;
+		    std::cout << "+ FILTRAR por 'DURACAO' (em minutos)" << std::endl;
+		    std::cout << "  > " << std::flush;
+		    std::cin >> duracao;
+		
+		    consulta.adicionarBuscaPorDuracao(duracao, negar);
+		} break;
 		case 7: {
 			std::string genero;
 
