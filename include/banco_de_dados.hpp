@@ -715,6 +715,52 @@ private:
 		return c;
 	}
 
+
+
+	Conjunto consultarIndiceNumerico(
+    const std::vector<unsigned> &indice,
+    unsigned minimo,
+    unsigneCd maximo,
+    unsigned Filme::*campo
+) const {
+    Conjunto resultado;
+
+    if (minimo > maximo || indice.empty()) {
+        return resultado;
+    }
+
+    // Encontra a primeira posição cujo valor seja >= minimo.
+    unsigned esq = 0;
+    unsigned dir = indice.size();
+
+    while (esq < dir) {
+        unsigned meio = esq + (dir - esq) / 2;
+        unsigned valor = filmes[indice[meio]].*campo;
+
+        if (valor < minimo) {
+            esq = meio + 1;
+        } else {
+            dir = meio;
+        }
+    }
+
+    // Adiciona os filmes até ultrapassar maximo.
+    for (unsigned i = esq; i < indice.size(); ++i) {
+        unsigned valor = filmes[indice[i]].*campo;
+
+        if (valor > maximo) {
+            break;
+        }
+
+        // Ano e duração iguais a zero representam dados ausentes.
+        if (valor != 0) {
+            resultado.add(indice[i]);
+        }
+    }
+
+    return resultado;
+}
+
 public:
 	std::vector<std::string> tipos;
 	std::vector<std::string> generos;
@@ -750,15 +796,13 @@ public:
 			std::cout << "(ADULTO: " << no->isAdulto() << ")" << std::endl;
 			break;
 		case TipoConsulta::ANO:
-			std::cout << "(ANO: " << no->getNum() << ")" << std::endl;
-			break;
+    		return this->consultarIndiceNumerico(this->ind_ano_inicial, consulta->getNum(), consulta->getNum(), &Filme::ano_inicial);
 		case TipoConsulta::ANO_FAIXA_INICIAL:
-			break;
+		    return this->consultarIndiceNumerico(this->ind_ano_inicial, consulta->getNum(), this->ano_inicial_max, &Filme::ano_inicial);
 		case TipoConsulta::ANO_FAIXA_FINAL:
-			break;
+		    return this->consultarIndiceNumerico(this->ind_ano_inicial, 1, consulta->getNum(), &Filme::ano_inicial);
 		case TipoConsulta::DURACAO:
-			std::cout << "(DURACAO: " << no->getNum() << ")" << std::endl;
-			break;
+		    return this->consultarIndiceNumerico(this->ind_duracao, consulta->getNum(), consulta->getNum(), &Filme::duracao);
 		case TipoConsulta::GENERO:
 			std::cout << "(GENERO: " << no->getStr() << ")" << std::endl;
 			break;
