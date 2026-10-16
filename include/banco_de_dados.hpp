@@ -23,6 +23,7 @@
 #include "filme.hpp"
 #include "leitor.hpp"
 #include "set.hpp"
+#include "indice_numerico.hpp"
 
 struct BancoDeDados {
 private:
@@ -56,6 +57,8 @@ private:
 	std::vector<unsigned> ind_ano_inicial;
 	std::vector<unsigned> ind_ano_final;
 	std::vector<unsigned> ind_duracao;
+
+	NoIndice *arvore_duracao = nullptr;
 
 	std::vector<std::vector<unsigned>> ind_tipo;
 	std::vector<std::vector<unsigned>> ind_genero;
@@ -133,6 +136,7 @@ private:
 
 		std::cout << "  * Indice: duracao... " << std::flush;
 		this->ind_duracao = this->criarIndiceNumero(duracao_max, obterDuracao);
+		criarArvoreDuracao();
 		std::cout << "OK!" << std::endl;
 
 		std::cout << "  * Indice: tipo... " << std::endl;
@@ -215,6 +219,16 @@ private:
 		countingsort(indices, k, f);
 
 		return indices;
+	}
+
+	void criarArvoreDuracao() {
+		destruirArvore(arvore_duracao);
+
+		for(unsigned i = 0; i < filmes.size(); i++) {
+			if (filmes[i].duracao > 0) {
+				inserir(arvore_duracao, filmes[i].duracao, i);
+			}
+		}
 	}
 
 	/* Ordena um vetor de inteiros utilizando o algoritmo Quicksort
@@ -445,8 +459,16 @@ private:
 			break;
 		case TipoConsulta::ANO_FAIXA_FINAL:
 			break;
-		case TipoConsulta::DURACAO:
-			break;
+		case TipoConsulta::DURACAO_INTERVALO: {
+			std::vector<unsigned> indices;
+			buscarIntervalo(this->arvore_duracao, consulta->getDuracaoMinima(),
+							consulta->getDuracaoMaxima(), indices);
+			Conjunto resultado;
+			for(unsigned i = 0; i < indices.size(); i++) {
+				resultado.add(indices[i]);
+			}
+			return resultado;
+		}	
 		case TipoConsulta::PRECO:
 			break;
 		case TipoConsulta::GENERO:
@@ -717,51 +739,65 @@ private:
 
 
 
-	Conjunto consultarIndiceNumerico(
-    const std::vector<unsigned> &indice,
-    unsigned minimo,
-    unsigneCd maximo,
-    unsigned Filme::*campo
-) const {
-    Conjunto resultado;
+	Conjunto consultarIndiceNumerico(const std::vector<unsigned> &indice, unsigned minimo,
+	    							unsigned maximo, unsigned Filme::*campo) const {
+    	Conjunto resultado;
 
-    if (minimo > maximo || indice.empty()) {
-        return resultado;
-    }
+	    if (minimo > maximo || indice.empty()) {
+	        return resultado;
+	    }
+	
+	    // Encontra a primeira posição cujo valor seja >= minimo.
+	    unsigned esq = 0;
+	    unsigned dir = indice.size();
+	
+	    while (esq < dir) {
+	        unsigned meio = esq + (dir - esq) / 2;
+	        unsigned valor = filmes[indice[meio]].*campo;
+	
+	        if (valor < minimo) {
+	            esq = meio + 1;
+	        } else {
+	            dir = meio;
+	        }
+	    }
+	
+	    // Adiciona os filmes até ultrapassar maximo.
+	    for (unsigned i = esq; i < indice.size(); ++i) {
+	        unsigned valor = filmes[indice[i]].*campo;
+	
+	        if (valor > maximo) {
+	            break;
+	        }
+	
+	        // Ano e duração iguais a zero representam dados ausentes.
+	        if (valor != 0) {
+	            resultado.add(indice[i]);
+	        }
+	    }
+	
+	    return resultado;
+	}
 
-    // Encontra a primeira posição cujo valor seja >= minimo.
-    unsigned esq = 0;
-    unsigned dir = indice.size();
 
-    while (esq < dir) {
-        unsigned meio = esq + (dir - esq) / 2;
-        unsigned valor = filmes[indice[meio]].*campo;
 
-        if (valor < minimo) {
-            esq = meio + 1;
-        } else {
-            dir = meio;
-        }
-    }
+	std::vector<unsigned> consultarDuracaoIntervalo(unsigned minimo, unsigned maximo) {
+		std::vector<unsigned> resultado;
 
-    // Adiciona os filmes até ultrapassar maximo.
-    for (unsigned i = esq; i < indice.size(); ++i) {
-        unsigned valor = filmes[indice[i]].*campo;
+		if (minimo > maximo) {
+			return resultado;
+		}
 
-        if (valor > maximo) {
-            break;
-        }
+		buscarIntervalo(arvore_duracao, minimo, maximo, resultado);
 
-        // Ano e duração iguais a zero representam dados ausentes.
-        if (valor != 0) {
-            resultado.add(indice[i]);
-        }
-    }
-
-    return resultado;
-}
+		return resultado;
+	}
 
 public:
+	unsigned getDuracaoMaxima() const {
+		return duracao_max;
+	}
+	
 	std::vector<std::string> tipos;
 	std::vector<std::string> generos;
 
@@ -801,8 +837,10 @@ public:
 		    return this->consultarIndiceNumerico(this->ind_ano_inicial, consulta->getNum(), this->ano_inicial_max, &Filme::ano_inicial);
 		case TipoConsulta::ANO_FAIXA_FINAL:
 		    return this->consultarIndiceNumerico(this->ind_ano_inicial, 1, consulta->getNum(), &Filme::ano_inicial);
-		case TipoConsulta::DURACAO:
-		    return this->consultarIndiceNumerico(this->ind_duracao, consulta->getNum(), consulta->getNum(), &Filme::duracao);
+		case TipoConsulta::DURACAO_INTERVALO:
+			std::cout << "(DURACAO: " << no->getDuracaoMinima() << "-"
+			          << no->getDuracaoMaxima() << ")" << std::endl;
+			break;
 		case TipoConsulta::GENERO:
 			std::cout << "(GENERO: " << no->getStr() << ")" << std::endl;
 			break;
@@ -960,5 +998,10 @@ public:
 				  << "x (de 8x)" << std::endl;
 		std::cout << "Recorte: (" << X << ", " << Y << ") .. (" << X + W << ", "
 				  << Y + H << ")" << std::endl;
+	}
+
+
+	~BancoDeDados() {
+		destruirArvore(arvore_duracao);
 	}
 };
