@@ -21,7 +21,7 @@ enum struct TipoConsulta {
 	ANO,
 	ANO_FAIXA_INICIAL,
 	ANO_FAIXA_FINAL,
-	DURACAO,
+	DURACAO_INTERVALO,
 	GENERO,
 	TIPO,
 	LOCALIZACAO,
@@ -47,6 +47,11 @@ union ConsultaDado {
 	 * - TipoConsulta::DURACAO
 	 */
 	unsigned num;
+
+	struct {
+		unsigned minimo;
+		unsigned maximo;
+	} intervalo;
 
 	/* Para: TipoConsulta::PRECO */
 	double preco;
@@ -94,6 +99,12 @@ public:
 		this->dado.num = num;
 	}
 
+	ConsultaNo(unsigned minimo, unsigned maximo) {
+		this->tipo = TipoConsulta::DURACAO_INTERVALO;
+		this->dado.intervalo.minimo = minimo;
+		this->dado.intervalo.maximo = maximo;
+	}
+
 	ConsultaNo(TipoConsulta tipo, double preco) {
 		this->tipo = tipo;
 		this->dado.preco = preco;
@@ -138,9 +149,17 @@ public:
 	unsigned getNum(void) const {
 		assert(tipo == TipoConsulta::ANO
 			|| tipo == TipoConsulta::ANO_FAIXA_INICIAL
-			|| tipo == TipoConsulta::ANO_FAIXA_FINAL
-			|| tipo == TipoConsulta::DURACAO);
+			|| tipo == TipoConsulta::ANO_FAIXA_FINAL);
 		return this->dado.num;
+	}
+
+	unsigned getDuracaoMinima(void) const {
+		assert(tipo == TipoConsulta::DURACAO_INTERVALO);
+		return dado.intervalo.minimo;
+	}
+	unsigned getDuracaoMaxima(void) const {
+		assert(tipo == TipoConsulta::DURACAO_INTERVALO);
+		return dado.intervalo.maximo;
 	}
 
 	double getPreco(void) const {
@@ -193,8 +212,9 @@ public:
 			return "Ai:" + std::to_string(this->getNum());
 		case TipoConsulta::ANO_FAIXA_FINAL:
 			return "Af:" + std::to_string(this->getNum());
-		case TipoConsulta::DURACAO:
-			return "d:" + std::to_string(this->getNum());
+		case TipoConsulta::DURACAO_INTERVALO:
+			return "d:" + std::to_string(getDuracaoMinima())
+				+ "-" + std::to_string(getDuracaoMaxima());
 		case TipoConsulta::GENERO:
 			return "g:" + this->getStr();
 		case TipoConsulta::PRECO:
@@ -215,7 +235,7 @@ public:
 			return "|:" + this->getEsq()->stringificar()
 				+ " |:" + this->getDir()->stringificar();
 		case TipoConsulta::OP_NAO:
-			return "~:" + this->getEsq()->stringificar();
+			return "~:" + this->getDir()->stringificar();
 		}
 
 		return "?";
@@ -293,9 +313,19 @@ public:
 		this->adicionarNo(no, negar);
 	}
 
-	void adicionarBuscaPorDuracao(const unsigned duracao, bool negar) {
-		ConsultaNo *no = new ConsultaNo(TipoConsulta::DURACAO, duracao);
+	/* Todas as buscas por duracao sao representadas por um intervalo */
+	void adicionarBuscaPorIntervaloDuracao(unsigned minimo, unsigned maximo, bool negar) {
+		ConsultaNo *no = new ConsultaNo(minimo, maximo);
 		this->adicionarNo(no, negar);
+	}
+	void adicionarBuscaPorDuracaoMinima(unsigned duracao, unsigned duracao_max, bool negar) {
+		this->adicionarBuscaPorIntervaloDuracao(duracao, duracao_max, negar);
+	}
+	void adicionarBuscaPorDuracaoMaxima(unsigned duracao, bool negar) {
+		this->adicionarBuscaPorIntervaloDuracao(1, duracao, negar);
+	}
+	void adicionarBuscaPorDuracaoExata(unsigned duracao, bool negar) {
+		this->adicionarBuscaPorIntervaloDuracao(duracao, duracao, negar);
 	}
 
 	void adicionarBuscaPorGenero(const std::string genero, bool negar) {
