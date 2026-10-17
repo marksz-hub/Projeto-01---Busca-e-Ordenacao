@@ -21,6 +21,7 @@ enum struct TipoConsulta {
 	ANO,
 	ANO_FAIXA_INICIAL,
 	ANO_FAIXA_FINAL,
+	ANO_INTERVALO,
 	DURACAO_INTERVALO,
 	GENERO,
 	TIPO,
@@ -105,6 +106,13 @@ public:
 		this->dado.intervalo.maximo = maximo;
 	}
 
+	ConsultaNo(TipoConsulta tipo, unsigned minimo, unsigned maximo) {
+	    assert(tipo == TipoConsulta::ANO_INTERVALO);
+	
+	    this->tipo = tipo;
+	    this->dado.intervalo.minimo = minimo;
+	    this->dado.intervalo.maximo = maximo;
+	}
 	ConsultaNo(TipoConsulta tipo, double preco) {
 		this->tipo = tipo;
 		this->dado.preco = preco;
@@ -162,6 +170,15 @@ public:
 		return dado.intervalo.maximo;
 	}
 
+	unsigned getAnoMinimo(void) const {
+		assert(tipo == TipoConsulta::ANO_INTERVALO);
+		return dado.intervalo.minimo;
+	}
+	unsigned getAnoMaximo(void) const {
+		assert(tipo == TipoConsulta::ANO_INTERVALO);
+		return dado.intervalo.maximo;
+	}
+
 	double getPreco(void) const {
 		assert(tipo == TipoConsulta::PRECO);
 		return this->dado.preco;
@@ -212,6 +229,9 @@ public:
 			return "Ai:" + std::to_string(this->getNum());
 		case TipoConsulta::ANO_FAIXA_FINAL:
 			return "Af:" + std::to_string(this->getNum());
+		case TipoConsulta::ANO_INTERVALO:
+		    return "AI:" + std::to_string(getAnoMinimo())
+		        + "-" + std::to_string(getAnoMaximo());
 		case TipoConsulta::DURACAO_INTERVALO:
 			return "d:" + std::to_string(getDuracaoMinima())
 				+ "-" + std::to_string(getDuracaoMaxima());
@@ -310,6 +330,11 @@ public:
 
 	void adicionarBuscaPorFaixaAnoFinal(const unsigned ano, bool negar) {
 		ConsultaNo *no = new ConsultaNo(TipoConsulta::ANO_FAIXA_FINAL, ano);
+		this->adicionarNo(no, negar);
+	}
+
+	void adicionarBuscaPorIntervaloAno(unsigned minimo, unsigned maximo, bool negar) {
+		ConsultaNo *no = new ConsultaNo(TipoConsulta::ANO_INTERVALO, minimo, maximo);
 		this->adicionarNo(no, negar);
 	}
 
