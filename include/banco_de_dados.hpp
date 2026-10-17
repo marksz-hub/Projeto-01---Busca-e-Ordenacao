@@ -59,6 +59,7 @@ private:
 	std::vector<unsigned> ind_duracao;
 
 	NoIndice *arvore_duracao = nullptr;
+	NoIndice *arvore_ano_inicial = nullptr;
 
 	std::vector<std::vector<unsigned>> ind_tipo;
 	std::vector<std::vector<unsigned>> ind_genero;
@@ -132,6 +133,10 @@ private:
 		std::cout << "  * Indice: ano final... " << std::flush;
 		this->ind_ano_final
 			= this->criarIndiceNumero(ano_final_max, obterAnoFinal);
+		std::cout << "OK!" << std::endl;
+
+		std::cout << "  * Arvore: ano inicial... " << std::flush;
+		criarArvoreAnoInicial();
 		std::cout << "OK!" << std::endl;
 
 		std::cout << "  * Indice: duracao... " << std::flush;
@@ -229,6 +234,21 @@ private:
 				inserir(arvore_duracao, filmes[i].duracao, i);
 			}
 		}
+	}
+
+	void criarArvoreAnoInicial() {
+	    destruirArvore(arvore_ano_inicial);
+	
+	    for (unsigned i = 0; i < filmes.size(); ++i) {
+	        const unsigned ano = filmes[i].ano_inicial;
+	
+	        // Ano zero representa dado ausente.
+	        if (ano == 0) {
+	            continue;
+	        }
+	
+	        inserir(arvore_ano_inicial, ano, i);
+	    }
 	}
 
 	/* Ordena um vetor de inteiros utilizando o algoritmo Quicksort
@@ -454,11 +474,13 @@ private:
 			}
 			return this->ind_filmes_nao_adultos;
 		case TipoConsulta::ANO:
-			break;
+			return this->consultarFilmePorIntervaloDeAnos(consulta->getNum(), consulta->getNum());
 		case TipoConsulta::ANO_FAIXA_INICIAL:
-			break;
+			return this->consultarFilmePorIntervaloDeAnos(consulta->getNum(), this->ano_inicial_max);
 		case TipoConsulta::ANO_FAIXA_FINAL:
-			break;
+			return this->consultarFilmePorIntervaloDeAnos(1, consulta->getNum());
+		case TipoConsulta::ANO_INTERVALO:
+			return this->consultarFilmePorIntervaloDeAnos(consulta->getAnoMinimo(), consulta->getAnoMaximo());
 		case TipoConsulta::DURACAO_INTERVALO: {
 			std::vector<unsigned> indices;
 			buscarIntervalo(this->arvore_duracao, consulta->getDuracaoMinima(),
@@ -793,6 +815,28 @@ private:
 		return resultado;
 	}
 
+
+	Conjunto consultarFilmePorIntervaloDeAnos(unsigned minimo, unsigned maximo) const {
+		Conjunto resultado;
+
+		if (minimo == 0 || minimo > maximo) {
+			return resultado;
+		}
+
+		std::vector<unsigned> indices;
+
+		buscarIntervalo(arvore_ano_inicial, minimo, maximo, indices);
+
+		for (unsigned indice : indices) {
+			resultado.add(indice);
+		}
+
+		return resultado;
+	}
+
+
+
+
 public:
 	unsigned getDuracaoMaxima() const {
 		return duracao_max;
@@ -832,11 +876,14 @@ public:
 			std::cout << "(ADULTO: " << no->isAdulto() << ")" << std::endl;
 			break;
 		case TipoConsulta::ANO:
-    		return this->consultarIndiceNumerico(this->ind_ano_inicial, consulta->getNum(), consulta->getNum(), &Filme::ano_inicial);
+    		std::cout << "(ANO >= " << no->getNum() << ")" << std::endl;
 		case TipoConsulta::ANO_FAIXA_INICIAL:
-		    return this->consultarIndiceNumerico(this->ind_ano_inicial, consulta->getNum(), this->ano_inicial_max, &Filme::ano_inicial);
+		    std::cout << "(ANO INICIAL >= " << no->getNum() << ")" << std::endl;
 		case TipoConsulta::ANO_FAIXA_FINAL:
-		    return this->consultarIndiceNumerico(this->ind_ano_inicial, 1, consulta->getNum(), &Filme::ano_inicial);
+		    std::cout << "(ANO FINAL >= " << no->getNum() << ")" << std::endl;
+		case TipoConsulta::ANO_INTERVALO:
+		    std::cout << "(ANO: " << no->getAnoMinimo() << "-" << no->getAnoMaximo()<< ")" << std::endl;
+		    break;
 		case TipoConsulta::DURACAO_INTERVALO:
 			std::cout << "(DURACAO: " << no->getDuracaoMinima() << "-"
 			          << no->getDuracaoMaxima() << ")" << std::endl;
@@ -1003,5 +1050,6 @@ public:
 
 	~BancoDeDados() {
 		destruirArvore(arvore_duracao);
+		destruirArvore(arvore_ano_inicial);
 	}
 };
