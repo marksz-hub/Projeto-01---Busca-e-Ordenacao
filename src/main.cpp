@@ -133,11 +133,9 @@ bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
 		std::cout << "  1 Adicionar filtro 'titulo'" << std::endl;
 		std::cout << "  2 Adicionar filtro 'adulto'" << std::endl;
 		std::cout << "  3 Adicionar filtro 'ano'" << std::endl;
-		std::cout << "  4 Adicionar filtro 'a partir do ano...'" << std::endl;
-		std::cout << "  5 Adicionar filtro 'ate o ano...'" << std::endl;
-		std::cout << "  6 Adicionar filtro 'duracao'" << std::endl;
-		std::cout << "  7 Adicionar filtro 'genero'" << std::endl;
-		std::cout << "  8 Adicionar filtro 'tipo'" << std::endl;
+		std::cout << "  4 Adicionar filtro 'duracao'" << std::endl;
+		std::cout << "  5 Adicionar filtro 'genero'" << std::endl;
+		std::cout << "  6 Adicionar filtro 'tipo'" << std::endl;
 		if( negar ) {
 			std::cout << "  9 Filtro normal (nao negar)" << std::endl;
 		} else {
@@ -166,31 +164,62 @@ bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
 			consulta.adicionarBuscaPorAdulto(adulto == 1, negar);
 		} break;
 		case 3: {
-		    unsigned ano;
-		    std::cout << "+ FILTRAR por 'ANO' (ano exato)" << std::endl;
+		    unsigned opcaoAno;
+		    std::cout << "+ FILTRAR por 'ANO'" << std::endl;
+		    std::cout << "  1 Ano especifico de lancamento" << std::endl;
+		    std::cout << "  2 Intervalo de anos de lancamento" << std::endl;
+		    std::cout << "  0 Voltar" << std::endl;
 		    std::cout << "  > " << std::flush;
-		    std::cin >> ano;
+		    std::cin >> opcaoAno;
 		
-		    consulta.adicionarBuscaPorAno(ano, negar);
-		} break;
-		case 4: {
-		    unsigned ano;
-		    std::cout << "+ FILTRAR por 'A PARTIR DO ANO'" << std::endl;
-		    std::cout << "  > " << std::flush;
-		    std::cin >> ano;
+		    switch (opcaoAno) {
+		    case 1: {
+		        unsigned ano;
 		
-		    consulta.adicionarBuscaPorFaixaAnoInicial(ano, negar);
-		} break;
-		case 5: {
-		    unsigned ano;
-		    std::cout << "+ FILTRAR por 'ATE O ANO'" << std::endl;
-		    std::cout << "  > " << std::flush;
-		    std::cin >> ano;
+		        std::cout << "+ FILTRAR por 'ANO ESPECIFICO'" << std::endl;
+		        std::cout << "  Ano de lancamento > " << std::flush;
+		        std::cin >> ano;
 		
-		    consulta.adicionarBuscaPorFaixaAnoFinal(ano, negar);
+		        if (ano == 0) {
+		            std::cout << "Ano invalido!" << std::endl;
+		            return true;
+		        }
+		
+		        consulta.adicionarBuscaPorAno(ano, negar);
+		    } break;
+		
+		    case 2: {
+		        unsigned minimo, maximo;
+		
+		        do {
+		            std::cout << "+ FILTRAR por 'INTERVALO DE ANOS'"
+		                      << std::endl;
+		            std::cout << "  Ano inicial > " << std::flush;
+		            std::cin >> minimo;
+		            std::cout << "  Ano final > " << std::flush;
+		            std::cin >> maximo;
+		
+		            if (minimo == 0 || minimo > maximo) {
+		                std::cout << "Intervalo invalido! "
+		                          << "O ano inicial deve ser positivo "
+		                          << "e menor ou igual ao ano final."
+		                          << std::endl;
+		            }
+		        } while (minimo == 0 || minimo > maximo);
+		
+		        consulta.adicionarBuscaPorIntervaloAno(minimo, maximo, negar);
+		    } break;
+		
+		    case 0:
+		        continue;
+		
+		    default:
+		        std::cout << "Opcao invalida!" << std::endl;
+		        continue;
+		    }
 		} break;
 			
-		case 6: {
+		case 4: {
 			unsigned opcaoDuracao;
 	
 			std::cout << "+ FILTRAR por 'DURACAO'" << std::endl;
@@ -246,7 +275,7 @@ bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
 				return true;	
 		} break;
 			
-		case 7: {
+		case 5: {
 			std::string genero;
 
 			std::cout << "+ FILTRAR por 'GENERO' (digite genero)" << std::endl;
@@ -258,7 +287,7 @@ bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
 
 			consulta.adicionarBuscaPorGenero(genero, negar);
 		} break;
-		case 8: {
+		case 6: {
 			std::string tipo;
 
 			std::cout << "+ FILTRAR por 'TIPO' (digite tipo)" << std::endl;
