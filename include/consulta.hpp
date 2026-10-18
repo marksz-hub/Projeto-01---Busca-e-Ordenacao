@@ -18,9 +18,9 @@
 enum struct TipoConsulta {
 	TITULO,
 	ADULTO,
-	ANO,
+/*	ANO,
 	ANO_FAIXA_INICIAL,
-	ANO_FAIXA_FINAL,
+	ANO_FAIXA_FINAL,	*/
 	ANO_INTERVALO,
 	DURACAO_INTERVALO,
 	GENERO,
@@ -42,11 +42,8 @@ union ConsultaDado {
 	bool adulto;
 
 	/* Para:
-	 * - TipoConsulta::ANO,
-	 * - TipoConsulta::ANO_FAIXA_INICIAL,
-	 * - TipoConsulta::ANO_FAIXA_FINAL, e
-	 * - TipoConsulta::DURACAO
-	 */
+	 * - TipoConsulta::ANO_INTERVALO e TipoConsulta::DURACAO
+	 */ 
 	unsigned num;
 
 	struct {
@@ -99,20 +96,21 @@ public:
 		this->tipo = tipo;
 		this->dado.num = num;
 	}
-
+/*
 	ConsultaNo(unsigned minimo, unsigned maximo) {
 		this->tipo = TipoConsulta::DURACAO_INTERVALO;
 		this->dado.intervalo.minimo = minimo;
 		this->dado.intervalo.maximo = maximo;
 	}
-
+*/
 	ConsultaNo(TipoConsulta tipo, unsigned minimo, unsigned maximo) {
-	    assert(tipo == TipoConsulta::ANO_INTERVALO);
+	    assert(tipo == TipoConsulta::ANO_INTERVALO || tipo == TipoConsulta::DURACAO_INTERVALO);
 	
 	    this->tipo = tipo;
 	    this->dado.intervalo.minimo = minimo;
 	    this->dado.intervalo.maximo = maximo;
 	}
+
 	ConsultaNo(TipoConsulta tipo, double preco) {
 		this->tipo = tipo;
 		this->dado.preco = preco;
@@ -155,27 +153,15 @@ public:
 	}
 
 	unsigned getNum(void) const {
-		assert(tipo == TipoConsulta::ANO
-			|| tipo == TipoConsulta::ANO_FAIXA_INICIAL
-			|| tipo == TipoConsulta::ANO_FAIXA_FINAL);
 		return this->dado.num;
 	}
 
-	unsigned getDuracaoMinima(void) const {
-		assert(tipo == TipoConsulta::DURACAO_INTERVALO);
+	unsigned getMinimo(void) const {
+		assert(tipo == TipoConsulta::DURACAO_INTERVALO || tipo == TipoConsulta::ANO_INTERVALO);
 		return dado.intervalo.minimo;
 	}
-	unsigned getDuracaoMaxima(void) const {
-		assert(tipo == TipoConsulta::DURACAO_INTERVALO);
-		return dado.intervalo.maximo;
-	}
-
-	unsigned getAnoMinimo(void) const {
-		assert(tipo == TipoConsulta::ANO_INTERVALO);
-		return dado.intervalo.minimo;
-	}
-	unsigned getAnoMaximo(void) const {
-		assert(tipo == TipoConsulta::ANO_INTERVALO);
+	unsigned getMaximo(void) const {
+		assert(tipo == TipoConsulta::DURACAO_INTERVALO || tipo == TipoConsulta::ANO_INTERVALO);
 		return dado.intervalo.maximo;
 	}
 
@@ -223,18 +209,18 @@ public:
 				return "a:1";
 			}
 			return "a:0";
-		case TipoConsulta::ANO:
+/*		case TipoConsulta::ANO:
 			return "A:" + std::to_string(this->getNum());
 		case TipoConsulta::ANO_FAIXA_INICIAL:
 			return "Ai:" + std::to_string(this->getNum());
 		case TipoConsulta::ANO_FAIXA_FINAL:
 			return "Af:" + std::to_string(this->getNum());
-		case TipoConsulta::ANO_INTERVALO:
-		    return "AI:" + std::to_string(getAnoMinimo())
-		        + "-" + std::to_string(getAnoMaximo());
+*/		case TipoConsulta::ANO_INTERVALO:
+		    return "AI:" + std::to_string(getMinimo())
+		        + "-" + std::to_string(getMaximo());
 		case TipoConsulta::DURACAO_INTERVALO:
-			return "d:" + std::to_string(getDuracaoMinima())
-				+ "-" + std::to_string(getDuracaoMaxima());
+			return "d:" + std::to_string(getMinimo())
+				+ "-" + std::to_string(getMaximo());
 		case TipoConsulta::GENERO:
 			return "g:" + this->getStr();
 		case TipoConsulta::PRECO:
@@ -317,7 +303,7 @@ public:
 		ConsultaNo *no = new ConsultaNo(TipoConsulta::ADULTO, adulto);
 		this->adicionarNo(no, negar);
 	}
-
+/*
 	void adicionarBuscaPorAno(const unsigned ano, bool negar) {
 		ConsultaNo *no = new ConsultaNo(TipoConsulta::ANO, ano);
 		this->adicionarNo(no, negar);
@@ -332,17 +318,37 @@ public:
 		ConsultaNo *no = new ConsultaNo(TipoConsulta::ANO_FAIXA_FINAL, ano);
 		this->adicionarNo(no, negar);
 	}
-
+*/
+	/* Todas as buscas por ano de lancamento sao representadas por um intervalo */
 	void adicionarBuscaPorIntervaloAno(unsigned minimo, unsigned maximo, bool negar) {
+		assert(minimo > 0);
+    	assert(maximo > 0);
+    	assert(minimo <= maximo);
+
 		ConsultaNo *no = new ConsultaNo(TipoConsulta::ANO_INTERVALO, minimo, maximo);
 		this->adicionarNo(no, negar);
 	}
-
+/*
+	void adicionarBuscaPorAnoMinimo(unsigned ano, unsigned ano_inicial_max, bool negar) {
+		this->adicionarBuscaPorIntervaloAno(ano, ano_inicial_max, negar);
+	}
+	void adicionarBuscaPorAnoMaximo(unsigned ano, bool negar) {
+		this->adicionarBuscaPorIntervaloAno(1, ano, negar);
+	}
+	void adicionarBuscaPorAnoEspecifico(unsigned ano, bool negar) {
+		this->adicionarBuscaPorIntervaloAno(ano, ano, negar);
+	}
+*/
 	/* Todas as buscas por duracao sao representadas por um intervalo */
 	void adicionarBuscaPorIntervaloDuracao(unsigned minimo, unsigned maximo, bool negar) {
-		ConsultaNo *no = new ConsultaNo(minimo, maximo);
+		assert(minimo > 0);
+    	assert(maximo > 0);
+    	assert(minimo <= maximo);
+
+		ConsultaNo *no = new ConsultaNo(TipoConsulta::DURACAO_INTERVALO, minimo, maximo);
 		this->adicionarNo(no, negar);
 	}
+/*
 	void adicionarBuscaPorDuracaoMinima(unsigned duracao, unsigned duracao_max, bool negar) {
 		this->adicionarBuscaPorIntervaloDuracao(duracao, duracao_max, negar);
 	}
@@ -352,7 +358,7 @@ public:
 	void adicionarBuscaPorDuracaoExata(unsigned duracao, bool negar) {
 		this->adicionarBuscaPorIntervaloDuracao(duracao, duracao, negar);
 	}
-
+*/
 	void adicionarBuscaPorGenero(const std::string genero, bool negar) {
 		ConsultaNo *no = new ConsultaNo(TipoConsulta::GENERO, genero);
 		this->adicionarNo(no, negar);

@@ -14,7 +14,7 @@
 
 struct NoIndice {
 		unsigned valor;
-		std::vector<unsigned> filmes;
+		std::vector<unsigned> indices;
 		NoIndice *esq;
 		NoIndice *dir;
 
@@ -43,6 +43,29 @@ inline void inserir(NoIndice *&raiz, unsigned valor, unsigned indiceFilme) {
 	else {
 		return raiz->filmes.push_back(indiceFilme);
 	}
+}
+
+inline void inserirSemRepeticao(NoIndice *&raiz, unsigned valor, unsigned indice) {
+    if (raiz == nullptr) {
+        raiz = new NoIndice(valor, indice);
+        return;
+    }
+
+    if (valor < raiz->valor) {
+        inserirSemRepeticao(raiz->esq, valor, indice);
+    }
+    else if (valor > raiz->valor) {
+        inserirSemRepeticao(raiz->dir, valor, indice);
+    }
+    else {
+        for (unsigned existente : raiz->filmes) {
+            if (existente == indice) {
+                return;
+            }
+        }
+
+        raiz->filmes.push_back(indice);
+    }
 }
 
 

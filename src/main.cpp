@@ -132,7 +132,7 @@ bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
 		}
 		std::cout << "  1 Adicionar filtro 'titulo'" << std::endl;
 		std::cout << "  2 Adicionar filtro 'adulto'" << std::endl;
-		std::cout << "  3 Adicionar filtro 'ano'" << std::endl;
+		std::cout << "  3 Adicionar filtro 'ano de lancamento'" << std::endl;
 		std::cout << "  4 Adicionar filtro 'duracao'" << std::endl;
 		std::cout << "  5 Adicionar filtro 'genero'" << std::endl;
 		std::cout << "  6 Adicionar filtro 'tipo'" << std::endl;
@@ -165,9 +165,11 @@ bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
 		} break;
 		case 3: {
 		    unsigned opcaoAno;
-		    std::cout << "+ FILTRAR por 'ANO'" << std::endl;
-		    std::cout << "  1 Ano especifico de lancamento" << std::endl;
-		    std::cout << "  2 Intervalo de anos de lancamento" << std::endl;
+		    std::cout << "+ FILTRAR por 'ANO DE LANCAMENTO'" << std::endl;
+		    std::cout << "  1 Ano especifico de lancamento (filmes ou series lancados em um ano especifico)" << std::endl;
+		    std::cout << "  2 Intervalo de anos de lancamento (filmes ou series lancados em um certo intervalo de anos)" << std::endl;
+			std::cout << "	3 Ano minimo de lancamento (filmes ou series lancados a partir de certo ano)" << std::endl;
+			std::cout << "	4 Ano maximo de lancamento (filmes ou series lancada ate certo ano)" << std::endl;
 		    std::cout << "  0 Voltar" << std::endl;
 		    std::cout << "  > " << std::flush;
 		    std::cin >> opcaoAno;
@@ -185,18 +187,16 @@ bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
 		            return true;
 		        }
 		
-		        consulta.adicionarBuscaPorAno(ano, negar);
+		        consulta.adicionarBuscaPorIntervaloAno(ano, ano, negar);
 		    } break;
-		
 		    case 2: {
 		        unsigned minimo, maximo;
 		
 		        do {
-		            std::cout << "+ FILTRAR por 'INTERVALO DE ANOS'"
-		                      << std::endl;
-		            std::cout << "  Ano inicial > " << std::flush;
+		            std::cout << "+ FILTRAR por 'INTERVALO DE ANOS'" << std::endl;
+		            std::cout << "  De: " << std::flush;
 		            std::cin >> minimo;
-		            std::cout << "  Ano final > " << std::flush;
+		            std::cout << "  Ate: " << std::flush;
 		            std::cin >> maximo;
 		
 		            if (minimo == 0 || minimo > maximo) {
@@ -209,6 +209,42 @@ bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
 		
 		        consulta.adicionarBuscaPorIntervaloAno(minimo, maximo, negar);
 		    } break;
+			case 3: {
+				unsigned minimo;
+				do{
+					std::cout << "+ FILTRAR por 'ANO MINIMO DE LANCAMENTO'" <<std::endl;
+					std::cout << " De: > " << std::flush;
+					std::cin >> minimo;
+
+					if(minimo == 0 || minimo > bd.getAnoInicialMaximo()) {
+						std::cout << "Ano invalido! "
+								  << "O ano minimo de lancamento deve ser positivo "
+								  << "e menor ou igual a " 
+								  << bd.getAnoInicialMaximo()
+								  << std::endl;
+					}
+
+				} while(minimo == 0 || minimo > bd.getAnoInicialMaximo());
+		        consulta.adicionarBuscaPorIntervaloAno(minimo, bd.getAnoInicialMaximo(), negar);
+			} break;
+			case 4: {
+				unsigned maximo;
+				do{
+					std::cout << "+ FILTRAR por 'ANO MAXIMO DE LANCAMENTO'" <<std::endl;
+					std::cout << " Ate: > " << std::flush;
+					std::cin >> maximo;
+
+					if(maximo == 0 || maximo > bd.getAnoInicialMaximo()) {
+						std::cout << "Ano invalido! "
+								  << "O ano maximo de lancamento deve ser positivo "
+								  << "e menor ou igual a " 
+								  << bd.getAnoInicialMaximo()
+								  << std::endl;
+					}		
+
+				} while(maximo == 0 || maximo > bd.getAnoInicialMaximo());
+		        consulta.adicionarBuscaPorIntervaloAno(1, maximo, negar);
+			} break;
 		
 		    case 0:
 		        continue;
@@ -241,11 +277,11 @@ bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
 				consulta.adicionarBuscaPorIntervaloDuracao(minimo, bd.getDuracaoMaxima(), negar);
 			} break;
 			case 2: {
-				unsigned duracao;
+				unsigned maximo;
 				std::cout << "+ FILTRAR por 'DURACAO MAXIMA' (em minutos)" <<std::endl;
 				std::cout << " > " << std::flush;
-				std::cin >> duracao;
-				consulta.adicionarBuscaPorIntervaloDuracao(1, duracao, negar);
+				std::cin >> maximo;
+				consulta.adicionarBuscaPorIntervaloDuracao(1, maximo, negar);
 			} break;
 			case 3: {
 				unsigned duracao;
@@ -264,8 +300,8 @@ bool cmdBuscarFilmeAdicionarFiltro(BancoDeDados &bd, Consulta &consulta) {
 					std::cin >> maximo;
 					if(minimo > maximo) {
 						std::cout << "Intervalo invalido (o minimo deve ser menor ou igual ao maximo)." << std::endl;
-					} while(minimo > maximo);
-				}
+					} 
+				} while(minimo > maximo);
 				consulta.adicionarBuscaPorIntervaloDuracao(minimo, maximo, negar);
 			} break;
 			case 0: 
@@ -420,6 +456,7 @@ bool cmdBuscarCinemaAdicionarFiltro(
 		std::cout << "  2 Adicionar filtro 'tipo'" << std::endl;
 		std::cout << "  3 Adicionar filtro 'preco'" << std::endl;
 		std::cout << "  4 Adicionar filtro 'localizacao'" << std::endl;
+		std::cout << "	5 Adicionar filtro 'ano de lancamento'" << std::endl;
 		if( negar ) {
 			std::cout << "  9 Filtro normal (nao negar)" << std::endl;
 		} else {
@@ -477,6 +514,97 @@ bool cmdBuscarCinemaAdicionarFiltro(
 
 			consulta.adicionarBuscaPorLocalizacao(loc, negar);
 
+		} break;
+		case 5: {
+			unsigned opcaoAno;
+		    std::cout << "+ FILTRAR por 'ANO DE LANCAMENTO'" << std::endl;
+		    std::cout << "  1 Ano especifico de lancamento (filmes ou series lancados em um ano especifico)" << std::endl;
+		    std::cout << "  2 Intervalo de anos de lancamento (filmes ou series lancados em um certo intervalo de anos)" << std::endl;
+			std::cout << "	3 Ano minimo de lancamento (filmes ou series lancados a partir de certo ano)" << std::endl;
+			std::cout << "	4 Ano maximo de lancamento (filmes ou series lancada ate certo ano)" << std::endl;
+		    std::cout << "  0 Voltar" << std::endl;
+		    std::cout << "  > " << std::flush;
+		    std::cin >> opcaoAno;
+		
+		    switch (opcaoAno) {
+			case 1: {
+		        unsigned ano;
+		
+		        std::cout << "+ FILTRAR por 'ANO ESPECIFICO'" << std::endl;
+		        std::cout << "  Ano de lancamento > " << std::flush;
+		        std::cin >> ano;
+		
+		        if (ano == 0) {
+		            std::cout << "Ano invalido!" << std::endl;
+		            return true;
+		        }
+		
+		        consulta.adicionarBuscaPorIntervaloAno(ano, ano, negar);
+		    } break;
+		    case 2: {
+		        unsigned minimo, maximo;
+		
+		        do {
+		            std::cout << "+ FILTRAR por 'INTERVALO DE ANOS'" << std::endl;
+		            std::cout << "  De: " << std::flush;
+		            std::cin >> minimo;
+		            std::cout << "  Ate: " << std::flush;
+		            std::cin >> maximo;
+		
+		            if (minimo == 0 || minimo > maximo) {
+		                std::cout << "Intervalo invalido! "
+		                          << "O ano inicial deve ser positivo "
+		                          << "e menor ou igual ao ano final."
+		                          << std::endl;
+		            }
+		        } while (minimo == 0 || minimo > maximo);
+		
+		        consulta.adicionarBuscaPorIntervaloAno(minimo, maximo, negar);
+		    } break;
+			case 3: {
+				unsigned minimo;
+				do{
+					std::cout << "+ FILTRAR por 'ANO MINIMO DE LANCAMENTO'" <<std::endl;
+					std::cout << " De: > " << std::flush;
+					std::cin >> minimo;
+
+					if(minimo == 0 || minimo > bd.getAnoInicialMaximo()) {
+						std::cout << "Ano invalido! "
+								  << "O ano minimo de lancamento deve ser positivo "
+								  << "e menor ou igual a "
+								  << bd.getAnoInicialMaximo()
+								  << std::endl;
+					}
+
+				} while(minimo == 0 || minimo > bd.getAnoInicialMaximo());
+		        consulta.adicionarBuscaPorIntervaloAno(minimo, bd.getAnoInicialMaximo(), negar);
+			} break;
+			case 4: {
+				unsigned maximo;
+				do{
+					std::cout << "+ FILTRAR por 'ANO MAXIMO DE LANCAMENTO'" <<std::endl;
+					std::cout << " Ate: > " << std::flush;
+					std::cin >> maximo;
+
+					if(maximo == 0 || maximo > bd.getAnoInicialMaximo()) {
+						std::cout << "Ano invalido! "
+								  << "O ano maximo de lancamento deve ser positivo "
+								  << "e menor ou igual a " 
+								  << bd.getAnoInicialMaximo()
+								  << std::endl;
+					}		
+
+				} while(maximo == 0 || maximo > bd.getAnoInicialMaximo());
+		        consulta.adicionarBuscaPorIntervaloAno(1, maximo, negar);
+			} break;
+		
+		    case 0:
+		        continue;
+		
+		    default:
+		        std::cout << "Opcao invalida!" << std::endl;
+		        continue;
+		    }
 		} break;
 		case 9:
 			negar = not negar;
