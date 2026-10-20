@@ -7,6 +7,7 @@
  *   2026-09-01
  */
 
+#include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -397,7 +398,8 @@ void cmdPaginarConsultaFilme(BancoDeDados &bd, const Consulta &consulta) {
 			return;
 		}
 
-		const unsigned maxPaginas = total / bd.getFilmesPorPagina();
+		const unsigned maxPaginas
+			= std::ceil((double)total / bd.getFilmesPorPagina());
 
 		std::cout << std::endl;
 		std::cout << "PAGINA: " << (pagina + 1) << " de " << maxPaginas
