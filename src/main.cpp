@@ -687,7 +687,8 @@ void cmdPaginarConsultaCinema(BancoDeDados &bd, const Consulta &consulta) {
 			return;
 		}
 
-		const unsigned maxPaginas = total / bd.getCinemasPorPagina();
+		const unsigned maxPaginas
+			= std::ceil((double)total / bd.getCinemasPorPagina());
 
 		std::cout << std::endl;
 		std::cout << "PAGINA: " << (pagina + 1) << " de " << maxPaginas

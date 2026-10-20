@@ -7,7 +7,9 @@
  *   2026-10-13
  */
 
+#include <cstdint>
 #include <cstdlib>
+#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -15,18 +17,18 @@
  * Cada ponto representa um cinema
  */
 struct Ponto {
-	unsigned x;
-	unsigned y;
-	unsigned ind; /* Índice no vetor de cinemas */
+	int64_t x;
+	int64_t y;
+	int64_t ind; /* Índice no vetor de cinemas */
 };
 
 /* Struct representando uma consulta por localização */
 struct Loc {
-	unsigned x, y, raio;
+	int64_t x, y, raio;
 
 	bool contem(const Ponto &p) const {
-		const unsigned dx = std::abs((int)p.x - (int)this->x);
-		const unsigned dy = std::abs((int)p.y - (int)this->y);
+		const int64_t dx = std::abs(p.x - this->x);
+		const int64_t dy = std::abs(p.y - this->y);
 
 		/* Raio maior do que a diferença */
 		if( dx > this->raio || dy > this->raio ) {
@@ -38,9 +40,9 @@ struct Loc {
 			return true;
 		}
 
-		const unsigned dx2 = dx * dx;
-		const unsigned dy2 = dy * dy;
-		const unsigned r2 = this->raio * this->raio;
+		const int64_t dx2 = dx * dx;
+		const int64_t dy2 = dy * dy;
+		const int64_t r2 = this->raio * this->raio;
 
 		/* Pitágoras */
 		return dx2 + dy2 <= r2;
@@ -49,10 +51,10 @@ struct Loc {
 
 /* Retângulo */
 struct Rect {
-	unsigned x;
-	unsigned y;
-	unsigned w;
-	unsigned h;
+	int64_t x;
+	int64_t y;
+	int64_t w;
+	int64_t h;
 
 	/* Verifica se o ponto está contido no retângulo */
 	bool contem(const Ponto &p) const {
@@ -62,38 +64,55 @@ struct Rect {
 
 	/* Verifica se o raio intersecta este retângulo */
 	bool intersecta(const Loc &loc) const {
-		const unsigned dx = std::abs((int)loc.x - (int)this->x);
-		const unsigned dy = std::abs((int)loc.y - (int)this->y);
+		const int64_t mw = this->w / 2;
+		const int64_t mh = this->h / 2;
 
-		const unsigned mw = this->w / 2;
-		const unsigned mh = this->h / 2;
+		const int64_t dx = std::abs(loc.x - this->x - mw);
+		const int64_t dy = std::abs(loc.y - this->y - mh);
 
 		/* Longe demais */
-		if( dx > (mw + loc.raio) || dy > (mh + loc.raio) ) {
+		if( (dx > (mw + loc.raio)) ) {
+			return false;
+		}
+
+		if( (dy > (mh + loc.raio)) ) {
 			return false;
 		}
 
 		/* Perto o suficiente */
-		if( dx <= mw || dy <= mh ) {
+		if( dx <= mw ) {
 			return true;
 		}
 
-		const unsigned d2 = (dx - mw) * (dx - mw) + (dy - mh) * (dy - mh);
-		const unsigned r2 = loc.raio * loc.raio;
+		if( dy <= mh ) {
+			return true;
+		}
+
+		int64_t dx2 = dx - mw;
+		dx2 *= dx2;
+
+		int64_t dy2 = dy - mh;
+		dy2 *= dy2;
+
+		const int64_t r2 = loc.raio * loc.raio;
 
 		/* Por distância */
-		return d2 <= r2;
+		return (dx2 + dy2) <= r2;
 	}
 
 	/* Verifica se um retângulo intersecta este retângulo */
 	bool intersecta(const Rect &r) const {
-		const unsigned xmax1 = this->x + this->w;
-		const unsigned ymax1 = this->y + this->h;
-		const unsigned xmax2 = r.x + r.w;
-		const unsigned ymax2 = r.y + r.h;
+		const int64_t r1x1 = this->x;
+		const int64_t r1x2 = this->x + this->w;
+		const int64_t r1y1 = this->y;
+		const int64_t r1y2 = this->y + this->h;
 
-		return this->x <= xmax2 && r.x <= xmax1 && this->y <= ymax2
-			&& r.y <= ymax1;
+		const int64_t r2x1 = r.x;
+		const int64_t r2x2 = r.x + r.w;
+		const int64_t r2y1 = r.y;
+		const int64_t r2y2 = r.y + r.h;
+
+		return r1x1 < r2x2 && r1x2 > r2x1 && r1y1 < r2y2 && r1y2 > r2y1;
 	}
 };
 
@@ -121,9 +140,9 @@ public:
 		, limites { 0, 0, 0, 0 }
 		, subdividido { false } { }
 
-	void atualizarLimites(unsigned x_max, unsigned y_max) {
-		const unsigned w = x_max;
-		const unsigned h = y_max;
+	void atualizarLimites(int64_t x_max, unsigned y_max) {
+		const int64_t w = x_max;
+		const int64_t h = y_max;
 		const Rect r = Rect { 0, 0, w, h };
 
 		this->atualizarLimites(r);
@@ -134,16 +153,16 @@ public:
 	}
 
 	void subdividir() {
-		const unsigned x = this->limites.x;
-		const unsigned y = this->limites.y;
-		const unsigned w = this->limites.w / 2;
-		const unsigned h = this->limites.h / 2;
+		const int64_t x = this->limites.x;
+		const int64_t y = this->limites.y;
+		const int64_t w = this->limites.w / 2;
+		const int64_t h = this->limites.h / 2;
 
-		const unsigned mx = x + w;
-		const unsigned my = y + h;
+		const int64_t mx = x + w;
+		const int64_t my = y + h;
 
-		const unsigned w2 = w + (this->limites.w % 2);
-		const unsigned h2 = h + (this->limites.h % 2);
+		const int64_t w2 = w + (this->limites.w % 2);
+		const int64_t h2 = h + (this->limites.h % 2);
 
 		const Rect no = Rect { x, y, w, h };
 		const Rect ne = Rect { mx, y, w2, h };
@@ -158,7 +177,7 @@ public:
 		this->subdividido = true;
 	}
 
-	bool inserir(unsigned x, unsigned y, unsigned ind) {
+	bool inserir(int64_t x, int64_t y, int64_t ind) {
 		return this->inserir(Ponto { x, y, ind });
 	}
 
@@ -189,6 +208,11 @@ public:
 
 	void buscar(const Loc &loc, std::vector<unsigned> &v) const {
 		if( !this->limites.intersecta(loc) ) {
+			std::cout << "b: " << loc.x << " " << loc.y << " " << loc.raio
+					  << std::endl;
+			std::cout << this->limites.x << " " << this->limites.y << " "
+					  << this->limites.w << " " << this->limites.h << std::endl
+					  << std::endl;
 			return;
 		}
 

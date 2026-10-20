@@ -1171,7 +1171,17 @@ public:
 
 		const unsigned W = this->cinema_x_max >> zoom;
 		const unsigned H = this->cinema_y_max >> zoom;
+
+		if( (x * W) >= this->cinema_x_max ) {
+			x = 0;
+		}
+
 		const unsigned X = x * W;
+
+		if( (y * H) >= this->cinema_y_max ) {
+			y = 0;
+		}
+
 		const unsigned Y = y * H;
 
 		Rect r = Rect { X, Y, W, H };

@@ -76,16 +76,16 @@ public:
 
 		for( i = 0; i < v.size(); ++i ) {
 			j = v[i];
-			contagem[j] = contagem[j] + 1;
+			++contagem[j];
 		}
 
 		for( i = 1; i <= k; ++i ) {
-			contagem[i] = contagem[i] + contagem[i - 1];
+			contagem[i] += contagem[i - 1];
 		}
 
 		for( i = v.size(); i > 0; --i ) {
 			j = v[i - 1];
-			contagem[j] = contagem[j] - 1;
+			--contagem[j];
 			ordenado[contagem[j]] = v[i - 1];
 		}
 
